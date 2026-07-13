@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '@core/services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   template: `
     <div class="login-container">
       <h1>GamesStats</h1>
@@ -27,6 +27,11 @@ import { AuthService } from '@core/services/auth.service';
           <button type="button" (click)="loginWithGoogle()"><i class="fa-brands fa-google"></i> Google</button>
         </div>
       </form>
+
+      <div class="auth-footer">
+        <p>Pas encore de compte ? <a routerLink="/auth/signup">Créer un compte</a></p>
+      </div>
+
       <div *ngIf="error" class="error">{{ error }}</div>
     </div>
   `,
@@ -61,12 +66,15 @@ import { AuthService } from '@core/services/auth.service';
 export class LoginComponent {
   form: ReturnType<FormBuilder['group']>;
   error: string | null = null;
+  private readonly returnUrl: string;
 
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly auth: AuthService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly route: ActivatedRoute
   ) {
+    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/app';
     this.form = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
@@ -83,7 +91,7 @@ export class LoginComponent {
 
     try {
       await this.auth.signInWithEmail(email, password);
-      await this.router.navigate(['/app']);
+      await this.router.navigate([this.returnUrl]);
     } catch (error: any) {
       this.error = error?.message || 'Erreur de connexion';
     }
@@ -92,7 +100,6 @@ export class LoginComponent {
   async loginWithGoogle(): Promise<void> {
     try {
       await this.auth.signInWithGoogle();
-      await this.router.navigate(['/app']);
     } catch (error: any) {
       this.error = error?.message || 'Erreur Google Sign-In';
     }

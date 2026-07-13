@@ -1,17 +1,9 @@
 import { Injectable } from '@angular/core';
-import { createUserWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut, User } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signOut, User } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { BehaviorSubject } from 'rxjs';
 import { auth, db, isFirebaseConfigured } from '../config/firebase.config';
-
-export interface Manager {
-  id: string;
-  prenom: string;
-  nom: string;
-  email: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Manager } from '@core/models/datamodel';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +11,9 @@ export interface Manager {
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
+
+  private currentManagerSubject = new BehaviorSubject<Manager | null>(null);
+  public currentManager$ = this.currentManagerSubject.asObservable();
 
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
@@ -34,10 +29,34 @@ export class AuthService {
       return;
     }
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       this.currentUserSubject.next(user);
       this.isAuthenticatedSubject.next(!!user);
+
+      if (user) {
+        await this.loadManager(user);
+      } else {
+        this.currentManagerSubject.next(null);
+      }
     });
+  }
+
+  private async loadManager(user: User): Promise<void> {
+    if (!isFirebaseConfigured || !db) {
+      this.currentManagerSubject.next(null);
+      return;
+    }
+
+    try {
+      const managerDoc = await getDoc(doc(db, 'managers', user.uid));
+      if (managerDoc.exists()) {
+        this.currentManagerSubject.next(managerDoc.data() as Manager);
+      } else {
+        this.currentManagerSubject.next(null);
+      }
+    } catch {
+      this.currentManagerSubject.next(null);
+    }
   }
 
   async signUpWithEmail(email: string, password: string, prenom: string, nom: string): Promise<void> {
@@ -58,6 +77,7 @@ export class AuthService {
     };
 
     await setDoc(doc(db, 'managers', user.uid), manager);
+    this.currentManagerSubject.next(manager);
   }
 
   async signInWithEmail(email: string, password: string): Promise<void> {
@@ -74,8 +94,19 @@ export class AuthService {
     }
 
     const provider = new GoogleAuthProvider();
-    const userCredential = await signInWithPopup(auth, provider);
-    const user = userCredential.user;
+    await signInWithRedirect(auth, provider);
+  }
+
+  async handleGoogleRedirectResult(): Promise<boolean> {
+    if (!isFirebaseConfigured || !auth || !db) {
+      return false;
+    }
+
+    const result = await getRedirectResult(auth);
+    const user = result?.user || auth.currentUser;
+    if (!user) {
+      return false;
+    }
 
     const manager: Manager = {
       id: user.uid,
@@ -87,6 +118,8 @@ export class AuthService {
     };
 
     await setDoc(doc(db, 'managers', user.uid), manager, { merge: true });
+    this.currentManagerSubject.next(manager);
+    return true;
   }
 
   async signOut(): Promise<void> {
@@ -94,6 +127,7 @@ export class AuthService {
       return;
     }
 
+    this.currentManagerSubject.next(null);
     await signOut(auth);
   }
 
@@ -101,8 +135,12 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
+  getCurrentManager(): Manager | null {
+    return this.currentManagerSubject.value;
+  }
+
   isAuthenticated(): boolean {
-    return this.isAuthenticatedSubject.value;
+    return !!auth?.currentUser || this.isAuthenticatedSubject.value;
   }
 
   getIdToken(): Promise<string | null> {

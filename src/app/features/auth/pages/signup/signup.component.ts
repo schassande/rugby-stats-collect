@@ -1,13 +1,14 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
 import { AuthService } from '@core/services/auth.service';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   template: `
     <div class="signup-container">
       <h1>Créer mon compte</h1>
@@ -47,6 +48,10 @@ import { AuthService } from '@core/services/auth.service';
           <button type="button" (click)="signupWithGoogle()"><i class="fa-brands fa-google"></i> Google</button>
         </div>
       </form>
+
+      <div class="auth-footer">
+        <p>Déjà un compte ? <a routerLink="/auth/login">Se connecter</a></p>
+      </div>
 
       <div *ngIf="error" class="error">{{ error }}</div>
     </div>
@@ -112,7 +117,6 @@ export class SignupComponent {
     this.isLoading = true;
     try {
       await this.auth.signInWithGoogle();
-      await this.router.navigate(['/app']);
     } catch (error: any) {
       this.error = error?.message || 'Erreur Google Sign-In';
     } finally {

@@ -1,0 +1,19 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+header {
+  flex-shrink: 0;
+  padding: 1rem;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+header h1 {
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
