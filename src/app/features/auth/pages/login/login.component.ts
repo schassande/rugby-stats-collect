@@ -3,13 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '@core/services/auth.service';
+import { AuthModeToggle } from '../../components/auth-mode-toggle.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, AuthModeToggle],
   template: `
     <div class="login-container">
+      <auth-mode-toggle></auth-mode-toggle>
       <h1>GamesStats</h1>
       <form [formGroup]="form" (ngSubmit)="login()">
         <div class="form-field">

@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { BehaviorSubject } from 'rxjs';
 import { auth, db, isFirebaseConfigured } from '../config/firebase.config';
 import { Manager } from '@core/models/datamodel';
+import { LocalAuthService } from './local-auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +19,7 @@ export class AuthService {
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
-  constructor() {
+  constructor(private readonly localAuth: LocalAuthService) {
     if (isFirebaseConfigured && auth && db) {
       this.setupAuthListener();
     }
@@ -60,6 +61,23 @@ export class AuthService {
   }
 
   async signUpWithEmail(email: string, password: string, prenom: string, nom: string): Promise<void> {
+    const mode = this.getAuthMode();
+    if (mode === 'local') {
+      const localUser = await this.localAuth.createLocalUser(email, password, prenom, nom);
+      const manager: Manager = {
+        id: localUser.id,
+        prenom: localUser.prenom || '',
+        nom: localUser.nom || '',
+        email: localUser.id,
+        createdAt: localUser.createdAt,
+        updatedAt: localUser.updatedAt
+      };
+      localStorage.setItem('auth_mode', 'local');
+      this.currentManagerSubject.next(manager);
+      this.isAuthenticatedSubject.next(true);
+      return;
+    }
+
     if (!isFirebaseConfigured || !auth || !db) {
       throw new Error('Firebase n\'est pas configuré. Ajoutez votre configuration Firebase réelle.');
     }
@@ -81,6 +99,26 @@ export class AuthService {
   }
 
   async signInWithEmail(email: string, password: string): Promise<void> {
+    const mode = this.getAuthMode();
+    if (mode === 'local') {
+      const localUser = await this.localAuth.verifyLocalUser(email, password);
+      if (!localUser) {
+        throw new Error('Invalid credentials');
+      }
+      const manager: Manager = {
+        id: localUser.id,
+        prenom: localUser.prenom || '',
+        nom: localUser.nom || '',
+        email: localUser.id,
+        createdAt: localUser.createdAt,
+        updatedAt: localUser.updatedAt
+      };
+      localStorage.setItem('auth_mode', 'local');
+      this.currentManagerSubject.next(manager);
+      this.isAuthenticatedSubject.next(true);
+      return;
+    }
+
     if (!isFirebaseConfigured || !auth) {
       throw new Error('Firebase n\'est pas configuré. Ajoutez votre configuration Firebase réelle.');
     }
@@ -123,11 +161,15 @@ export class AuthService {
   }
 
   async signOut(): Promise<void> {
-    if (!auth) {
+    const mode = this.getAuthMode();
+    this.currentManagerSubject.next(null);
+    this.isAuthenticatedSubject.next(false);
+    if (mode === 'local') {
+      localStorage.removeItem('auth_mode');
       return;
     }
 
-    this.currentManagerSubject.next(null);
+    if (!auth) return;
     await signOut(auth);
   }
 
@@ -140,7 +182,17 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
+    const mode = this.getAuthMode();
+    if (mode === 'local') {
+      return this.isAuthenticatedSubject.value || !!this.currentManagerSubject.value;
+    }
     return !!auth?.currentUser || this.isAuthenticatedSubject.value;
+  }
+
+  private getAuthMode(): 'local' | 'firebase' {
+    const stored = localStorage.getItem('auth_mode');
+    if (stored === 'local' || stored === 'firebase') return stored;
+    return isFirebaseConfigured ? 'firebase' : 'local';
   }
 
   getIdToken(): Promise<string | null> {

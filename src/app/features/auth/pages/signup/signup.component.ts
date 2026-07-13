@@ -4,13 +4,15 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
 import { AuthService } from '@core/services/auth.service';
+import { AuthModeToggle } from '../../components/auth-mode-toggle.component';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, AuthModeToggle],
   template: `
     <div class="signup-container">
+      <auth-mode-toggle></auth-mode-toggle>
       <h1>Créer mon compte</h1>
       <form [formGroup]="form" (ngSubmit)="signup()">
         <div class="form-field">
