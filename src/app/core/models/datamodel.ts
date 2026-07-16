@@ -8,10 +8,9 @@ export type TerrainType = 'NATUREL' | 'SYNTHETIQUE' | 'HYBRIDE' | 'AUTRE';
 export type ConditionsMeteo = 'SEC' | 'PLUIE' | 'VENT' | 'FROID' | 'CHAUD' | 'AUTRE';
 
 export interface Manager {
-  id: string;
+  id: string; // email
   prenom: string;
   nom: string;
-  email: string;
   createdAt: string;
   updatedAt: string;
 }

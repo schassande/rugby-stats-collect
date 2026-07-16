@@ -1,56 +1,12 @@
-# Phase 04 - Dexie Database Setup
-
-## Objectif
-
-Configurer IndexedDB via Dexie.js pour le stockage local offline.
-
-## Étapes
-
-### 1. Créer le schéma Dexie
-
-Créer `src/app/core/database/rugby-stats.database.ts`:
-
-```typescript
-import Dexie, { Table } from 'dexie';
-import { Manager, Equipe, Match, Evenement, SyncOperation, SyncMetadata } from '../models/datamodel';
-
-export class RugbyStatsDatabase extends Dexie {
-  managers!: Table<Manager>;
-  equipes!: Table<Equipe>;
-  matches!: Table<Match>;
-  evenements!: Table<Evenement>;
-  operations_queue!: Table<SyncOperation>;
-  sync_metadata!: Table<SyncMetadata>;
-
-  constructor() {
-    super('RugbyStatsDB');
-    this.version(1).stores({
-      managers: '++id',
-      equipes: '++id, saison',
-      matches: '++id, equipeId, date',
-      evenements: '++id, matchId, instant, createdAt',
-      operations_queue: '++id, evenementId, matchId, status, createdAt',
-      sync_metadata: '++id, matchId'
-    });
-  }
-}
-
-export const db = new RugbyStatsDatabase();
-```
-
-### 2. Créer DatabaseService
-
-Créer `src/app/core/services/database.service.ts`:
-
-```typescript
 import { Injectable } from '@angular/core';
-import { db } from '../database/rugby-stats.database';
-import { Evenement, Match, Equipe, Manager, SyncOperation, SyncMetadata } from '../models/datamodel';
+import { db } from '../db/rugby-stats.database';
+import { Evenement, Match, Equipe, Manager, SyncOperation } from '../models/datamodel';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DatabaseService {
+
   // Events
   async addEvent(event: Omit<Evenement, 'id'>): Promise<Evenement> {
     const id = await db.evenements.add(event as any);
@@ -73,6 +29,7 @@ export class DatabaseService {
     return db.evenements.get(eventId);
   }
 
+
   // Matches
   async addMatch(match: Omit<Match, 'id'>): Promise<Match> {
     const id = await db.matches.add(match as any);
@@ -94,6 +51,7 @@ export class DatabaseService {
   async getMatch(matchId: number): Promise<Match | undefined> {
     return db.matches.get(matchId);
   }
+
 
   // Teams
   async addTeam(team: Omit<Equipe, 'id'>): Promise<Equipe> {
@@ -119,76 +77,43 @@ export class DatabaseService {
     return db.equipes.get(teamId);
   }
 
+
   // Managers
   async addManager(manager: Manager): Promise<Manager> {
-    await db.managers.add(manager);
+    await db.local_users.add(manager);
     return manager;
   }
 
   async getManager(managerId: string): Promise<Manager | undefined> {
-    return db.managers.get(managerId);
+    return db.local_users.get(managerId);
   }
 
-  // Sync metadata
-  async getSyncMetadata(matchId: number): Promise<SyncMetadata | undefined> {
-    return db.sync_metadata.where('matchId').first();
-  }
-
-  async setSyncMetadata(metadata: SyncMetadata): Promise<void> {
-    await db.sync_metadata.put(metadata);
-  }
 
   // Bulk
   async clearDatabase(): Promise<void> {
     await db.delete();
   }
 
+  
   async exportDatabase(): Promise<any> {
     return {
-      managers: await db.managers.toArray(),
+      managers: await db.local_users.toArray(),
       equipes: await db.equipes.toArray(),
       matches: await db.matches.toArray(),
       evenements: await db.evenements.toArray(),
-      operations_queue: await db.operations_queue.toArray(),
-      sync_metadata: await db.sync_metadata.toArray()
+      operations_queue: await db.operations_queue.toArray()
     };
   }
 
   async importDatabase(data: any): Promise<void> {
     await db.transaction('rw', [
-      db.managers, db.equipes, db.matches, db.evenements, db.operations_queue, db.sync_metadata
+      db.local_users, db.equipes, db.matches, db.evenements, db.operations_queue
     ], async () => {
-      if (data.managers) await db.managers.bulkAdd(data.managers);
+      if (data.managers) await db.local_users.bulkAdd(data.managers);
       if (data.equipes) await db.equipes.bulkAdd(data.equipes);
       if (data.matches) await db.matches.bulkAdd(data.matches);
       if (data.evenements) await db.evenements.bulkAdd(data.evenements);
       if (data.operations_queue) await db.operations_queue.bulkAdd(data.operations_queue);
-      if (data.sync_metadata) await db.sync_metadata.bulkAdd(data.sync_metadata);
     });
   }
 }
-```
-
-### 3. Tester avec DevTools
-
-```bash
-ng serve
-```
-
-Ouvrir DevTools:
-- Application → Storage → IndexedDB → RugbyStatsDB
-- Vérifier les tables sont créées
-- Ajouter des données via console
-
-## Checklist
-
-- [X] Dexie installé (`npm install dexie`)
-- [X] RugbyStatsDatabase créé
-- [X] DatabaseService implémenté
-- [X] Tables créées dans IndexedDB
-- [X] CRUD fonctionnent
-- [ ] Transactions OK
-
-## Prochaine étape
-
-→ [Phase 05 - Layout & Navigation](05.layout_navigation.md)

@@ -68,7 +68,6 @@ export class AuthService {
         id: localUser.id,
         prenom: localUser.prenom || '',
         nom: localUser.nom || '',
-        email: localUser.id,
         createdAt: localUser.createdAt,
         updatedAt: localUser.updatedAt
       };
@@ -86,10 +85,9 @@ export class AuthService {
     const user = userCredential.user;
 
     const manager: Manager = {
-      id: user.uid,
+      id: email,
       prenom,
       nom,
-      email,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -106,10 +104,9 @@ export class AuthService {
         throw new Error('Invalid credentials');
       }
       const manager: Manager = {
-        id: localUser.id,
+        id: email,
         prenom: localUser.prenom || '',
         nom: localUser.nom || '',
-        email: localUser.id,
         createdAt: localUser.createdAt,
         updatedAt: localUser.updatedAt
       };
@@ -142,15 +139,14 @@ export class AuthService {
 
     const result = await getRedirectResult(auth);
     const user = result?.user || auth.currentUser;
-    if (!user) {
+    if (!user || !user.email) {
       return false;
     }
 
     const manager: Manager = {
-      id: user.uid,
+      id: user.email,
       prenom: user.displayName?.split(' ')[0] || '',
       nom: user.displayName?.split(' ')[1] || '',
-      email: user.email || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

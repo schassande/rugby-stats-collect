@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
+import { db } from '@core/db/rugby-stats.database';
 
 @Component({
   selector: 'app-root',
