@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '@core/services/auth.service';
 import { TeamService } from '@core/services/team.service';
 
@@ -24,6 +24,9 @@ import { TeamService } from '@core/services/team.service';
           <a routerLink="/app/team" routerLinkActive="active" class="tab-item">Equipe</a>
           <a routerLink="/app/game" routerLinkActive="active" class="tab-item">Match</a>
         }
+        <a (click)="logout()" icon="pi pi-trash">
+          <i class="pi pi-sign-out"></i>
+        </a>
       </nav>
     </div>
   `,
@@ -99,6 +102,10 @@ import { TeamService } from '@core/services/team.service';
   ]
 })
 export class AppLayoutComponent {
+  private readonly auth = inject(AuthService);
+  private readonly teamService = inject(TeamService);
+  private readonly router = inject(Router);
+
   public get user$() {
     return this.auth.currentManager$;
   }
@@ -107,8 +114,8 @@ export class AppLayoutComponent {
     return this.teamService.currentTeam$;
   }
 
-  constructor(
-    private readonly auth: AuthService,
-    private readonly teamService: TeamService
-  ) {}
+  async logout() {
+    await this.auth.signOut();
+    await this.router.navigateByUrl('/');
+  }
 }

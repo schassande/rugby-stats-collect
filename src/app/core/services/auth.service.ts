@@ -53,6 +53,10 @@ export class AuthService {
     this.currentManagerSubject.next(manager);
   }
 
+  public async loginLocal(localUser: LocalUser): Promise<void> {
+    this.currentManagerSubject.next(localUser);
+  }
+
   public async loginWithEmail(email: string, password: string, ): Promise<void> {
     if (this.getAuthMode() === 'local') {
       const localUser = await this.verifyLocalUser(email, password);
@@ -189,8 +193,11 @@ export class AuthService {
   private async getLocalUser(email: string): Promise<LocalUser | undefined> {
     return await localDatabase.local_users.get(email);
   }
+  public async getLocalUsers(): Promise<LocalUser[]> {
+    return await localDatabase.local_users.toArray();
+  }
 
-  private async deleteLocalUser(email: string): Promise<void> {
+  public async deleteLocalUser(email: string): Promise<void> {
     await localDatabase.local_users.delete(email);
   }
 

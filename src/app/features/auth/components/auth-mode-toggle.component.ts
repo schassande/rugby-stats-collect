@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, EventEmitter, inject, model, OnInit, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthMode, AuthService } from '@core/services/auth.service';
 
@@ -10,10 +10,10 @@ import { AuthMode, AuthService } from '@core/services/auth.service';
   template: `
     <div class="auth-mode-toggle">
       <label>
-        <input type="radio" name="authMode" [checked]="mode()==='firebase'" (change)="setMode('firebase')" /> Firebase
+        <input type="radio" name="authMode" [checked]="mode()==='firebase'" (change)="setMode('firebase')" /> En ligne
       </label>
       <label>
-        <input type="radio" name="authMode" [checked]="mode()==='local'" (change)="setMode('local')" /> Local (Offline)
+        <input type="radio" name="authMode" [checked]="mode()==='local'" (change)="setMode('local')" /> Hors ligne
       </label>
     </div>
   `,
@@ -25,15 +25,16 @@ import { AuthMode, AuthService } from '@core/services/auth.service';
   ]
 })
 export class AuthModeToggle implements OnInit {
-  mode = signal<AuthMode>('firebase');
+  public mode = model<AuthMode>('firebase');
   authService = inject(AuthService);
 
   ngOnInit(): void {
     this.mode.set(this.authService.getAuthMode());
   }
 
- async setMode(m: AuthMode) {
-    this.mode.set(m);
+ async setMode(m: AuthMode) {  
     this.authService.setAuthMode(m);
+    this.mode.set(m);
+    console.log('Auth mode ', m);
   }
 }
