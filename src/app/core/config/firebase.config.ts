@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth';
+import { initializeFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyB34c1ZhTQgYDMDcw-HDA38ZLyBM5HybX4",
@@ -10,12 +10,13 @@ const firebaseConfig = {
   messagingSenderId: "172993693663",
   appId: "1:172993693663:web:569353efcd223124cf666a"
 };
-
-const isPlaceholderConfig = (value: string): boolean =>
-  value.includes('YOUR_') || value.includes('your-project') || value.includes('123456789') || value.includes('abcdef123456');
-
-export const isFirebaseConfigured = Object.values(firebaseConfig).every((value) => typeof value === 'string' && !isPlaceholderConfig(value));
-
-export const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
-export const auth = isFirebaseConfigured && app ? getAuth(app) : null;
-export const db = isFirebaseConfigured && app ? getFirestore(app) : null;
+export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+try {
+  await setPersistence(auth, browserLocalPersistence);
+} catch (error) {
+  console.error('Unable to configure Firebase auth persistence:', error);
+}
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true
+}, 'rugby-stats-collect');

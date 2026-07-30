@@ -2,13 +2,15 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-events',
+  selector: 'app-match-detail',
   standalone: true,
   imports: [CommonModule],
   template: `
     <section>
-      <h2>Événements d'un match</h2>
+      <h2>Les matches de votre équipe</h2>
     </section>
   `
 })
-export class EventsComponent {}
+export class MatchDetailComponent {
+  
+}

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '@core/services/auth.service';
+import { TeamService } from '@core/services/team.service';
 
 @Component({
   selector: 'app-layout',
@@ -12,14 +13,17 @@ import { AuthService } from '@core/services/auth.service';
       <div class="content">
         <router-outlet></router-outlet>
       </div>
-
-      <div class="user-info" *ngIf="user$ | async as user">
-        Connecté : {{ user.email }}
+      @if (user$ | async; as user) {
+      <div class="user-info">
+        Connecté : {{ user.prenom }} {{ user.nom }}
       </div>
+      }
       <nav class="tab-bar" aria-label="Navigation principale">
         <a routerLink="/app/welcome" routerLinkActive="active" class="tab-item">Accueil</a>
-        <a routerLink="/app/team" routerLinkActive="active" class="tab-item">Equipe</a>
-        <a routerLink="/app/game" routerLinkActive="active" class="tab-item">Match</a>
+        @if (currentTeam | async; as team) {
+          <a routerLink="/app/team" routerLinkActive="active" class="tab-item">Equipe</a>
+          <a routerLink="/app/game" routerLinkActive="active" class="tab-item">Match</a>
+        }
       </nav>
     </div>
   `,
@@ -96,8 +100,15 @@ import { AuthService } from '@core/services/auth.service';
 })
 export class AppLayoutComponent {
   public get user$() {
-    return this.auth.currentUser$;
+    return this.auth.currentManager$;
   }
 
-  constructor(private readonly auth: AuthService) {}
+  public get currentTeam() {
+    return this.teamService.currentTeam$;
+  }
+
+  constructor(
+    private readonly auth: AuthService,
+    private readonly teamService: TeamService
+  ) {}
 }

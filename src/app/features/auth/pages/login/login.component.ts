@@ -16,12 +16,12 @@ import { AuthModeToggle } from '../../components/auth-mode-toggle.component';
       <form [formGroup]="form" (ngSubmit)="login()">
         <div class="form-field">
           <label for="email">Email</label>
-          <input id="email" formControlName="email" type="email" placeholder="Email" />
+          <input id="email" formControlName="email" type="email" placeholder="Email" autocomplete="username"/>
         </div>
 
         <div class="form-field">
           <label for="password">Mot de passe</label>
-          <input id="password" formControlName="password" type="password" placeholder="Mot de passe" />
+          <input id="password" formControlName="password" type="password" placeholder="Mot de passe" autocomplete="current-password" />
         </div>
 
         <div class="actions">
@@ -92,7 +92,7 @@ export class LoginComponent {
     const password = this.form.value.password ?? '';
 
     try {
-      await this.auth.signInWithEmail(email, password);
+      await this.auth.loginWithEmail(email, password);
       await this.router.navigate([this.returnUrl]);
     } catch (error: any) {
       this.error = error?.message || 'Erreur de connexion';
@@ -101,7 +101,8 @@ export class LoginComponent {
 
   async loginWithGoogle(): Promise<void> {
     try {
-      await this.auth.signInWithGoogle();
+      await this.auth.loginWithGoogle();
+      await this.router.navigate([this.returnUrl]);
     } catch (error: any) {
       this.error = error?.message || 'Erreur Google Sign-In';
     }

@@ -70,6 +70,11 @@
               "buildTarget": "GamesStats:build:development"
             }
           },
+          "options": {
+            "headers": {
+              "Referrer-Policy": "no-referrer"
+            }
+          },
           "defaultConfiguration": "development"
         },
         "test": {

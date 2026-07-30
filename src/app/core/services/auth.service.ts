@@ -1,201 +1,215 @@
 import { Injectable } from '@angular/core';
-import { createUserWithEmailAndPassword, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signOut, User } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut, User, UserCredential } from 'firebase/auth';
+import { doc, enableNetwork, getDoc, getDocFromServer, setDoc } from 'firebase/firestore';
 import { BehaviorSubject } from 'rxjs';
-import { auth, db, isFirebaseConfigured } from '../config/firebase.config';
+import { auth, db as firestoreDatabase } from '../config/firebase.config';
 import { Manager } from '@core/models/datamodel';
-import { LocalAuthService } from './local-auth.service';
+import { db as localDatabase, LocalUser } from '../db/rugby-stats.database';
+
+export type AuthMode = 'local' | 'firebase';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
+  private static readonly SALT = 'rugby_local_salt_v1';
+  private static readonly LOCAL_STORAGE_AUTH_MODE = 'auth_mode';
 
+  /** User firebase */
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+
+  /** User applicatif */
   private currentManagerSubject = new BehaviorSubject<Manager | null>(null);
   public currentManager$ = this.currentManagerSubject.asObservable();
 
-  private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
-  public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
-
-  constructor(private readonly localAuth: LocalAuthService) {
-    if (isFirebaseConfigured && auth && db) {
-      this.setupAuthListener();
-    }
-  }
-
-  private setupAuthListener(): void {
-    if (!auth) {
-      return;
-    }
-
-    onAuthStateChanged(auth, async (user) => {
-      this.currentUserSubject.next(user);
-      this.isAuthenticatedSubject.next(!!user);
-
-      if (user) {
-        await this.loadManager(user);
-      } else {
-        this.currentManagerSubject.next(null);
-      }
-    });
-  }
-
-  private async loadManager(user: User): Promise<void> {
-    if (!isFirebaseConfigured || !db) {
-      this.currentManagerSubject.next(null);
-      return;
-    }
-
-    try {
-      const managerDoc = await getDoc(doc(db, 'managers', user.uid));
-      if (managerDoc.exists()) {
-        this.currentManagerSubject.next(managerDoc.data() as Manager);
-      } else {
-        this.currentManagerSubject.next(null);
-      }
-    } catch {
-      this.currentManagerSubject.next(null);
-    }
-  }
-
-  async signUpWithEmail(email: string, password: string, prenom: string, nom: string): Promise<void> {
-    const mode = this.getAuthMode();
-    if (mode === 'local') {
-      const localUser = await this.localAuth.createLocalUser(email, password, prenom, nom);
-      const manager: Manager = {
-        id: localUser.id,
-        prenom: localUser.prenom || '',
-        nom: localUser.nom || '',
-        createdAt: localUser.createdAt,
-        updatedAt: localUser.updatedAt
-      };
-      localStorage.setItem('auth_mode', 'local');
-      this.currentManagerSubject.next(manager);
-      this.isAuthenticatedSubject.next(true);
-      return;
-    }
-
-    if (!isFirebaseConfigured || !auth || !db) {
-      throw new Error('Firebase n\'est pas configuré. Ajoutez votre configuration Firebase réelle.');
-    }
-
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  /**
+   * Enregistrement de l'utilisateur par son email.
+   * @param email 
+   * @param password 
+   * @param prenom 
+   * @param nom 
+   * @returns 
+   */
+  public async registerWithEmail(email: string, password: string, prenom: string, nom: string): Promise<void> {
+    // creation de l'utilisateur dans firebase
+    const userCredential = await createUserWithEmailAndPassword(auth!, email, password);
     const user = userCredential.user;
-
+    const d = new Date().toISOString();
+    // creation du manager
     const manager: Manager = {
       id: email,
       prenom,
       nom,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: d,
+      updatedAt: d
     };
+    // enregistrement du manager dans firestore
+    await setDoc(doc(firestoreDatabase, 'managers', manager.id), manager);
 
-    await setDoc(doc(db, 'managers', user.uid), manager);
+    // Enregistrement du manager dans la base local
+    this.saveLocalUser(manager, password);
+
+    this.currentUserSubject.next(user);
     this.currentManagerSubject.next(manager);
   }
 
-  async signInWithEmail(email: string, password: string): Promise<void> {
-    const mode = this.getAuthMode();
-    if (mode === 'local') {
-      const localUser = await this.localAuth.verifyLocalUser(email, password);
+  public async loginWithEmail(email: string, password: string, ): Promise<void> {
+    if (this.getAuthMode() === 'local') {
+      const localUser = await this.verifyLocalUser(email, password);
       if (!localUser) {
         throw new Error('Invalid credentials');
       }
-      const manager: Manager = {
-        id: email,
-        prenom: localUser.prenom || '',
-        nom: localUser.nom || '',
-        createdAt: localUser.createdAt,
-        updatedAt: localUser.updatedAt
-      };
-      localStorage.setItem('auth_mode', 'local');
-      this.currentManagerSubject.next(manager);
-      this.isAuthenticatedSubject.next(true);
-      return;
+      this.currentManagerSubject.next(localUser);
+      
+    } else if (this.getAuthMode() === 'firebase') {
+      const fbUser = await signInWithEmailAndPassword(auth!, email, password);
+      await this.manageFirebaseAuthResult(fbUser, password);
     }
-
-    if (!isFirebaseConfigured || !auth) {
-      throw new Error('Firebase n\'est pas configuré. Ajoutez votre configuration Firebase réelle.');
-    }
-
-    await signInWithEmailAndPassword(auth, email, password);
   }
 
-  async signInWithGoogle(): Promise<void> {
-    if (!isFirebaseConfigured || !auth || !db) {
-      throw new Error('Firebase n\'est pas configuré. Ajoutez votre configuration Firebase réelle.');
-    }
-
-    const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
+  /**
+   * Configures Firebase auth persistence and resolves once the initial auth state is restored.
+   */
+  public async initializeAuthPersistenceAndRestoreSession(): Promise<void> {
+    // enableNetwork(db);
+    await new Promise<void>((resolve) => {
+      let firstEmission = true;
+      onAuthStateChanged(auth, (fbUser) => {
+        // console.log('onAuthStateChanged:', fbUser, fbUser?.metadata.lastSignInTime);
+        if (!fbUser) return;
+        try {
+          fbUser.reload()
+            .then(() => this.manageFirebaseAuthUser(fbUser))
+            .catch(error => {
+              console.warn('Profil Firestore indisponible au démarrage:', error);
+              this.currentUserSubject.next(fbUser);
+            });
+        } finally {
+          if (firstEmission) {
+            firstEmission = false;
+            resolve();
+          }
+        }
+      });
+    });
   }
 
-  async handleGoogleRedirectResult(): Promise<boolean> {
-    if (!isFirebaseConfigured || !auth || !db) {
-      return false;
+  public async loginWithGoogle(): Promise<void> {
+    const fbUser = await signInWithPopup(auth,new GoogleAuthProvider());
+    await this.manageFirebaseAuthResult(fbUser)
+  }
+
+  private async manageFirebaseAuthResult(fbUser: UserCredential|null, password: string = ''): Promise<void> {
+    if (fbUser)
+      await this.manageFirebaseAuthUser(fbUser?.user);
+  }
+  private async manageFirebaseAuthUser(user: User|null, password: string = ''): Promise<void> {
+    const email = user?.email;
+    if (!email) {
+      throw new Error('Invalid credentials');
     }
+    // authentification ok avec Firebase
+    // console.log('manageFirebaseAuthResult, load manager with email', email);
+    let manager: Manager;
+    try {
+      const docRef = doc(firestoreDatabase!, 'managers', email);
+      const managerDoc = await getDocFromServer(docRef);
+      if (managerDoc.exists()) {
+        manager = managerDoc.data() as Manager;
+      } else {
+        // L'utilisateur a un compte pour s'authentifier mais il n'a pas de user dans l'application
+        // ça a pu planter entre les 2 actions ou simplement c'est une auth google.
+        // => on recréé sont un utilisateur applicatif
+        manager = {
+          id: email,
+          prenom: user.displayName || '',
+          nom: user.displayName || '',
+          createdAt: user.metadata.creationTime || '',
+          updatedAt: user.metadata.creationTime || ''
+        };
 
-    const result = await getRedirectResult(auth);
-    const user = result?.user || auth.currentUser;
-    if (!user || !user.email) {
-      return false;
+        // enregistrement du manager dans firestore
+        await setDoc(doc(firestoreDatabase!, 'managers', manager.id), manager);
+      }
+    } catch(error) {
+      console.error('Erreur pendant le traitement de la réponse Firebase', error);
+      throw error;
     }
+    // Enregistrement / Mise à jour du manager dans la base local
+    this.saveLocalUser(manager, password);
 
-    const manager: Manager = {
-      id: user.email,
-      prenom: user.displayName?.split(' ')[0] || '',
-      nom: user.displayName?.split(' ')[1] || '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    await setDoc(doc(db, 'managers', user.uid), manager, { merge: true });
+    this.currentUserSubject.next(user);
     this.currentManagerSubject.next(manager);
-    return true;
   }
 
-  async signOut(): Promise<void> {
-    const mode = this.getAuthMode();
+  public async signOut(): Promise<void> {
+    this.currentUserSubject.next(null);
     this.currentManagerSubject.next(null);
-    this.isAuthenticatedSubject.next(false);
-    if (mode === 'local') {
-      localStorage.removeItem('auth_mode');
-      return;
+    if (this.getAuthMode() === 'firebase') {
+      await signOut(auth!);
     }
-
-    if (!auth) return;
-    await signOut(auth);
   }
 
-  getCurrentUser(): User | null {
-    return this.currentUserSubject.value;
-  }
-
-  getCurrentManager(): Manager | null {
+  public getCurrentManager(): Manager | null {
     return this.currentManagerSubject.value;
   }
 
-  isAuthenticated(): boolean {
-    const mode = this.getAuthMode();
-    if (mode === 'local') {
-      return this.isAuthenticatedSubject.value || !!this.currentManagerSubject.value;
-    }
-    return !!auth?.currentUser || this.isAuthenticatedSubject.value;
+  public isAuthenticated(): boolean {
+    return !!auth?.currentUser || !!this.currentManagerSubject.value;
   }
 
-  private getAuthMode(): 'local' | 'firebase' {
-    const stored = localStorage.getItem('auth_mode');
-    if (stored === 'local' || stored === 'firebase') return stored;
-    return isFirebaseConfigured ? 'firebase' : 'local';
+  public getAuthMode(): AuthMode {
+    const stored = localStorage.getItem(AuthService.LOCAL_STORAGE_AUTH_MODE);
+    if (stored === 'local' || stored === 'firebase') {
+      return stored;
+    }
+    return 'firebase';
   }
 
-  getIdToken(): Promise<string | null> {
-    const user = this.getCurrentUser();
-    if (!user) {
-      return Promise.resolve(null);
+  public setAuthMode(authMode: AuthMode) {
+    localStorage.setItem(AuthService.LOCAL_STORAGE_AUTH_MODE, authMode);
+  }
+
+  private async saveLocalUser(manager: Manager, password: string|undefined = undefined): Promise<LocalUser> {
+    const existing = await localDatabase.local_users.get(manager.id);
+    const passwordHash = password ? await this.hash(password) : (existing ? existing.passwordHash : '');
+    const user: LocalUser = { ...manager, passwordHash };
+    await  localDatabase.local_users.put(user, user.id);
+    return user;
+  }
+
+  private async verifyLocalUser(email: string, password: string): Promise<LocalUser | null> {
+    const user = await this.getLocalUser(email);
+    if (!user) return null;
+    const passwordHash = await this.hash(password);
+    if (passwordHash === user.passwordHash) return user;
+    return null;
+  }
+
+  private async getLocalUser(email: string): Promise<LocalUser | undefined> {
+    return await localDatabase.local_users.get(email);
+  }
+
+  private async deleteLocalUser(email: string): Promise<void> {
+    await localDatabase.local_users.delete(email);
+  }
+
+  private async hash(password: string): Promise<string> {
+    try {
+      const enc = new TextEncoder();
+      const data = enc.encode(AuthService.SALT + password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    } catch {
+      // fallback simple hash (not secure) if SubtleCrypto unavailable
+      let h = 0;
+      const s = AuthService.SALT + password;
+      for (let i = 0; i < s.length; i++) {
+        h = (h << 5) - h + s.charCodeAt(i);
+        h |= 0;
+      }
+      return Math.abs(h).toString(16);
     }
-    return user.getIdToken();
   }
 }

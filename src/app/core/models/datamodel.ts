@@ -7,6 +7,21 @@ export type NatureEvenement = 'SCORE' | 'CONQUETE' | 'DISCIPLINE' | 'INDICATEUR'
 export type TerrainType = 'NATUREL' | 'SYNTHETIQUE' | 'HYBRIDE' | 'AUTRE';
 export type ConditionsMeteo = 'SEC' | 'PLUIE' | 'VENT' | 'FROID' | 'CHAUD' | 'AUTRE';
 
+export type Saison = 
+    '2026/2027' |
+    '2027/2028' |
+    '2028/2029' |
+    '2029/2030' |
+    '2030/2031' |
+    '2031/2032' ;
+export const Saisons: Saison[] = [ 
+    '2026/2027' ,
+    '2027/2028' ,
+    '2028/2029' ,
+    '2029/2030' ,
+    '2030/2031' ,
+    '2031/2032' ];
+
 export interface Manager {
   id: string; // email
   prenom: string;
@@ -19,7 +34,6 @@ export interface Equipe {
   id: number;
   nom: string;
   managerIds: string[];
-  saison: string;
   logo?: string;
   createdAt: string;
   updatedAt: string;
@@ -30,7 +44,7 @@ export interface Match {
   equipeId: number;
   managerId: string;
   date: string;
-  saison: string;
+  saison: Saison;
   lieu?: string;
   terrain?: TerrainType;
   nomAdversaire: string;

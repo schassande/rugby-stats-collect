@@ -2,15 +2,13 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-more',
+  selector: 'app-event-detail',
   standalone: true,
   imports: [CommonModule],
   template: `
     <section>
-      <h2>Plus</h2>
-      <p>Page supplémentaire pour le menu.</p>
-      <p>Cette page est accessible uniquement après authentification.</p>
+      <h2>Administration des Événements</h2>
     </section>
   `
 })
-export class MoreComponent {}
+export class EventDetailComponent {}

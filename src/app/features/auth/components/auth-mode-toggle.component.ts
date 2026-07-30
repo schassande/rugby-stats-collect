@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LocalAuthService } from '@core/services/local-auth.service';
-import { setupLocalUsers } from '@core/utils/setup-local-users';
+import { AuthMode, AuthService } from '@core/services/auth.service';
+
 
 @Component({
   selector: 'auth-mode-toggle',
@@ -10,10 +10,10 @@ import { setupLocalUsers } from '@core/utils/setup-local-users';
   template: `
     <div class="auth-mode-toggle">
       <label>
-        <input type="radio" name="authMode" [checked]="mode==='firebase'" (change)="setMode('firebase')" /> Firebase
+        <input type="radio" name="authMode" [checked]="mode()==='firebase'" (change)="setMode('firebase')" /> Firebase
       </label>
       <label>
-        <input type="radio" name="authMode" [checked]="mode==='local'" (change)="setMode('local')" /> Local (dev/offline)
+        <input type="radio" name="authMode" [checked]="mode()==='local'" (change)="setMode('local')" /> Local (Offline)
       </label>
     </div>
   `,
@@ -24,25 +24,16 @@ import { setupLocalUsers } from '@core/utils/setup-local-users';
     `
   ]
 })
-export class AuthModeToggle {
-  mode: 'local' | 'firebase' = 'firebase';
+export class AuthModeToggle implements OnInit {
+  mode = signal<AuthMode>('firebase');
+  authService = inject(AuthService);
 
-  constructor(private readonly localAuth: LocalAuthService) {
-    const stored = localStorage.getItem('auth_mode');
-    if (stored === 'local' || stored === 'firebase') this.mode = stored;
-    else this.mode = (typeof window !== 'undefined' && !!localStorage.getItem('auth_mode')) ? (localStorage.getItem('auth_mode') as any) : 'firebase';
+  ngOnInit(): void {
+    this.mode.set(this.authService.getAuthMode());
   }
 
-  async setMode(m: 'local' | 'firebase') {
-    this.mode = m;
-    localStorage.setItem('auth_mode', m);
-    if (m === 'local') {
-      try {
-        await setupLocalUsers(this.localAuth);
-      } catch (e) {
-        // non-blocking
-        console.warn('setupLocalUsers failed', e);
-      }
-    }
+ async setMode(m: AuthMode) {
+    this.mode.set(m);
+    this.authService.setAuthMode(m);
   }
 }

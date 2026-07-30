@@ -14,7 +14,7 @@ import { AuthModeToggle } from '../../components/auth-mode-toggle.component';
     <div class="signup-container">
       <auth-mode-toggle></auth-mode-toggle>
       <h1>Créer mon compte</h1>
-      <form [formGroup]="form" (ngSubmit)="signup()">
+      <form [formGroup]="form" (ngSubmit)="register()">
         <div class="form-field">
           <label>Prénom</label>
           <input formControlName="prenom" placeholder="Prénom" />
@@ -47,7 +47,7 @@ import { AuthModeToggle } from '../../components/auth-mode-toggle.component';
 
         <div class="actions">
           <button type="submit">Créer mon compte</button>
-          <button type="button" (click)="signupWithGoogle()"><i class="fa-brands fa-google"></i> Google</button>
+          <button type="button" (click)="loginWithGoogle()"><i class="fa-brands fa-google"></i> Google</button>
         </div>
       </form>
 
@@ -87,7 +87,7 @@ export class SignupComponent {
     });
   }
 
-  async signup(): Promise<void> {
+  async register(): Promise<void> {
     if (this.form.invalid || !this.agreedToCGU) {
       this.error = 'Veuillez remplir tous les champs';
       return;
@@ -106,7 +106,7 @@ export class SignupComponent {
 
     this.isLoading = true;
     try {
-      await this.auth.signUpWithEmail(email, password, prenom, nom);
+      await this.auth.registerWithEmail(email, password, prenom, nom);
       await this.router.navigate(['/app']);
     } catch (error: any) {
       this.error = error?.message || 'Erreur lors de la création du compte';
@@ -115,10 +115,10 @@ export class SignupComponent {
     }
   }
 
-  async signupWithGoogle(): Promise<void> {
+  async loginWithGoogle(): Promise<void> {
     this.isLoading = true;
     try {
-      await this.auth.signInWithGoogle();
+      await this.auth.loginWithGoogle();
     } catch (error: any) {
       this.error = error?.message || 'Erreur Google Sign-In';
     } finally {
