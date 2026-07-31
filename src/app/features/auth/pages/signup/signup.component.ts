@@ -60,8 +60,9 @@ import { AuthModeToggle } from '../../components/auth-mode-toggle.component';
   `,
   styles: [
     `
-      .signup-container { max-width: 520px; margin: 4rem auto; padding: 2rem; background: #fff; border-radius: 12px; }
+      .signup-container { max-width: 520px; width: calc(100% - 2rem); margin: 4rem auto; padding: 2rem; background: #fff; border-radius: 12px; }
       .form-field { margin-bottom: 1rem; }
+      .form-field input:not([type='checkbox']) { display: block; width: 100%; min-width: 0; }
       .actions { display: grid; gap: 1rem; }
     `
   ]

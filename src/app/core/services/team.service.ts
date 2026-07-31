@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, from, map, mergeMap, Observable, of } from 'rxjs';
-import { Equipe } from '@core/models/datamodel';
+import { Equipe, Saison } from '@core/models/datamodel';
 import { DatabaseService } from '@core/services/database.service';
 import { AuthService } from '@core/services/auth.service';
 
@@ -71,5 +71,17 @@ export class TeamService {
   async setCurrentTeam(team: Equipe){
     this.currentTeamSubject.next(team);
     // TODO Stockage localement de l'id de l'équipe courante
+  }
+
+  public currentSeason(): Saison {
+    const curYear = Number(new Date().getFullYear());
+    if (new Date().getMonth() < 6) {
+      return ((curYear-1) + '/' + curYear) as Saison;
+    } else {
+      return (curYear + '/' + (curYear+1)) as Saison;
+    }    
+  }
+  public emptyTeam(): Equipe {
+    return {id:-1, nom: '', createdAt: '', managerIds:[], updatedAt:''};
   }
 }

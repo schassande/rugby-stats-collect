@@ -7,6 +7,29 @@
   box-sizing: border-box;
 }
 
+/* Les composants PrimeNG sont parfois des éléments inline avec une largeur
+   minimale propre. Les contraintes ci-dessous évitent qu'un formulaire crée
+   une largeur de page supérieure à celle de l'écran. */
+input,
+textarea,
+select,
+button,
+.p-inputtext,
+.p-inputnumber,
+.p-select,
+.p-datepicker {
+  max-width: 100%;
+}
+
+input,
+textarea,
+.p-inputtext,
+.p-inputnumber,
+.p-select,
+.p-datepicker {
+  min-width: 0;
+}
+
 html,
 body {
   min-height: 100%;

@@ -24,7 +24,7 @@ export class RugbyStatsDB extends Dexie {
       evenements: '++id, matchId, instant, createdAt',
       operations_queue: '++id, evenementId, matchId, status, createdAt',
     });
-    console.log('Local database started.');
+    //console.log('Local database started.');
   }
 }
 

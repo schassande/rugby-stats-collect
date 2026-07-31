@@ -1,0 +1,208 @@
+<div class="evenement-section">
+  @if (event() && match()) {
+    <h2>{{isEdit() ? 'Modifier l événement' : 'Créer un événement'}}</h2>
+    @if (error()) {
+      <p-message severity="error" [text]="error()!" />
+    }
+    <form [formGroup]="form" class="evenement-form">
+      <h3>Quand</h3>
+      <span class="periode-options">
+        <span>{{event()?.instant | date:'HH:mm:SS' }}</span>
+        <span class="periode-option">
+          <p-radiobutton formControlName="periode" name="periode" inputId="periode-1" [value]="1" (onClick)="onPeriodeChange(1)" />
+          <label for="periode-1">1ère période</label>
+        </span>
+        <span class="periode-option">
+          <p-radiobutton formControlName="periode" name="periode" inputId="periode-2" [value]="2" (onClick)="onPeriodeChange(2)" />
+          <label for="periode-2">2nd période</label>
+        </span>
+      </span>
+
+      <h3>Nature de l'événement</h3>
+      <app-option-select-button
+        [options]="eventNatureOptions"
+        [value]="form.controls.nature.value"
+        (valueChange)="onNatureChange($event)" />
+      @if (eventTypeOptions().length) {
+        <h3>Type de l'événement</h3>
+        <app-option-select-button
+          [options]="eventTypeOptions()"
+          [value]="form.controls.type.value"
+          (valueChange)="onTypeChange($event)" />
+      }
+      @if (config()?.equipe) {
+        <h3>Equipe</h3>
+        <div class="equipe-options">
+          <span class="equipe-option">
+            <p-radiobutton formControlName="equipe" name="equipe" inputId="equipe-nous"
+              value="NOUS" (onClick)="onEquipeChange('NOUS')" />
+            <label for="equipe-nous">Nous</label>
+          </span>
+          <span class="equipe-option">
+            <p-radiobutton formControlName="equipe" name="equipe" inputId="equipe-adversaire"
+              value="ADV" (onClick)="onEquipeChange('ADV')" />
+            <label for="equipe-adversaire">Adversaire</label>
+          </span>
+        </div>
+
+      }
+      @if (config()?.zoneTerrain) {
+        <h3>Zone de terrain</h3>
+        <div class="zone-terrain-choice">
+          <img src="/icons/event/zone_terrain.png" alt="4 zones dans le terrain de rugby"/>
+          <div class="zone-terrain-options">
+            @for (option of zoneTerrainOptions; track option.value) {
+              <div class="zone-terrain-option">
+                <p-radiobutton formControlName="zoneTerrain" name="zoneTerrain"
+                  [inputId]="'zone-terrain-' + option.value" [value]="option.value"
+                  (onClick)="onZoneTerrainChange(option.value)" />
+              </div>
+            }
+          </div>
+        </div>
+      }
+      @if (config()?.positionLargeur) {
+        <h3>Position sur la largeur</h3>
+        <div class="position-largeur-choice">
+          <img src="/icons/event/position_largeur.png" alt="Position sur la largeur du terrain" />
+          <div class="position-largeur-options">
+            @for (option of positionLargeurOptions; track option.value) {
+              <div class="position-largeur-option">
+                <p-radiobutton formControlName="positionLargeur" name="positionLargeur"
+                  [inputId]="'position-largeur-' + option.value" [value]="option.value"
+                  (onClick)="onPositionLargeurChange(option.value)" />
+                <label [for]="'position-largeur-' + option.value">{{ option.label }}</label>
+              </div>
+            }
+          </div>
+        </div>
+      }
+      @if (config()?.fautesPenalite) { 
+        <h3>Faute Penalité</h3>
+        <div class="fautes-penalite-options">
+          @for (option of fautesPenaliteOptions; track option.value) {
+            <div class="fautes-penalite-option">
+              <p-radiobutton formControlName="fautesPenalite" name="fautesPenalite"
+                [inputId]="'fautes-penalite-' + option.value" [value]="option.value"
+                (onClick)="onFautesPenaliteChange(option.value)" />
+              <label [for]="'fautes-penalite-' + option.value">{{ option.label }}</label>
+            </div>
+          }
+        </div> 
+      }
+      @if (config()?.complementDiscipline) { 
+        <h3>Complément discipline</h3>
+        <app-option-select-button
+          [options]="complementDisciplineOptions"
+          [value]="form.controls.complementDiscipline.value ?? null"
+          (valueChange)="onComplementDisciplineChange($any($event))" />
+      }
+      @if (config()?.choixDeJeuPenalite) {
+        <h3>Choix de Jeu Pénalité</h3>
+        <app-option-select-button
+          [options]="choixDeJeuPenaliteOptions"
+          [value]="form.controls.choixDeJeuPenalite.value ?? null"
+          (valueChange)="onChoixDeJeuPenaliteChange($any($event))" />
+      }
+      @if (config()?.fautesBrasCasse) { 
+        <h3>Faute bras cassé</h3>
+        <div class="fautes-bras-casse-options">
+          @for (option of fautesBrasCasseOptions; track option.value) {
+            <div class="fautes-bras-casse-option">
+              <p-radiobutton formControlName="fautesBrasCasse" name="fautesBrasCasse"
+                [inputId]="'fautes-bras-casse-' + option.value" [value]="option.value"
+                (onClick)="onFautesBrasCasseChange(option.value)" />
+              <label [for]="'fautes-bras-casse-' + option.value">{{ option.label }}</label>
+            </div>
+          }
+        </div>
+      }
+      @if (config()?.choixDeJeuBrasCasse) { 
+        <h3>Choix de jeu sur le coup franc</h3>
+        <app-option-select-button
+          [options]="choixDeJeuBrasCasseOptions"
+          [value]="form.controls.choixDeJeuBrasCasse.value ?? null"
+          (valueChange)="onChoixDeJeuBrasCasseChange($any($event))" />
+      }
+      @if (config()?.zoneLancee) {
+        <h3>Zone de lancée</h3>
+        <div class="zone-lance-choice">
+          <img src="/icons/event/zone_lance.png" alt="Zone du lancé en touche" />
+          <div class="zone-lance-options">
+            @for (zone of [1, 2, 3]; track zone) {
+              <div class="zone-lance-option">
+                <p-radiobutton formControlName="zoneLancee" name="zoneLancee"
+                  [inputId]="'zone-lance-' + zone" [value]="zone"
+                  (onClick)="onZoneLanceChange($any(zone))" />
+                <label [for]="'zone-lance-' + zone" style="font-size: 2rem;">{{ zone }}</label>
+              </div>
+            }
+          </div>
+        </div>
+      }
+      @if (config()?.distanceJeuPied) {
+        <h3>Distance</h3>
+        <div class="distance-jeu-pied-container">
+          <div class="distance-jeu-pied">
+            <label for="distance-jeu-pied">Distance</label>
+            <p-inputnumber inputId="distance-jeu-pied" formControlName="distanceJeuPied"
+              [min]="1" [max]="99" [showButtons]="true" [useGrouping]="false"
+              (onInput)="onDistanceJeuPiedChange($event.value)" />
+          </div>
+        </div>
+      }
+      @if (config()?.resultatMelee) {
+        <h3>Résultat Mêlée</h3>
+        <app-option-select-button [options]="resultatMeleeOptions" [value]="form.controls.resultatMelee.value ?? null" (valueChange)="onResultatMeleeChange($any($event))" />
+      }
+      @if (config()?.resultatMaul) {
+        <h3>Résultat Maul</h3>
+        <app-option-select-button [options]="resultatMaulOptions" [value]="form.controls.resultatMaul.value ?? null" (valueChange)="onResultatMaulChange($any($event))" />
+      }
+      @if (config()?.resultatRuck) { 
+        <h3>Résultat Ruck</h3>
+        <app-option-select-button [options]="resultatRuckOptions" [value]="form.controls.resultRuck.value ?? null" (valueChange)="onResultatRuckChange($any($event))" />
+      }
+      @if (config()?.resultatTouche) { 
+        <h3>Résultat touche</h3>
+        <app-option-select-button [options]="resultatToucheOptions" [value]="form.controls.resultatTouche.value ?? null" (valueChange)="onResultatToucheChange($any($event))" />
+      }
+      @if (config()?.recuperation) { 
+        <h3>Récupération</h3>
+        <app-option-select-button [options]="recuperationOptions" [value]="form.controls.recuperation.value ?? null" (valueChange)="onRecuperationChange($any($event))" />
+      }
+      @if (config()?.resultat && (event()!.type != 'PENALITE' || event()!.choixDeJeuPenalite == 'POTEAU')) { 
+        <h3>Résultat</h3>
+        <app-option-select-button [options]="resultatOptions" [value]="form.controls.resultat.value ?? null" (valueChange)="onResultatChange($any($event))" />
+        
+      }
+      @if (config()?.numeroJoueur1) { 
+        <h3>Numéro du joueur</h3>
+        <div class="numero-joueurs-container">
+          <div class="numero-joueurs">
+            <label for="numero-joueur-1">Joueur 1</label>
+            <p-inputnumber inputId="numero-joueur-1" formControlName="numeroJoueur1"
+              [min]="1" [max]="99" [showButtons]="true" [useGrouping]="false"
+              (onInput)="onNumeroJoueur1Change($event.value)" />
+          </div>
+          @if (config()?.numeroJoueur2) { 
+            <div class="numero-joueurs">
+              <label for="numero-joueur-2">Joueur 2</label>
+              <p-inputnumber inputId="numero-joueur-2" formControlName="numeroJoueur2"
+                [min]="1" [max]="99" [showButtons]="true" [useGrouping]="false"
+                (onInput)="onNumeroJoueur2Change($event.value)" />
+            </div>
+          }
+        </div>
+      }
+      <div class="form-actions">
+        @if (isEdit()) {
+          <button type="button" class="delete-button" (click)="delete()" [disabled]="saving()">Supprimer</button>
+        }
+        <button type="button" class="cancel-button" (click)="cancel()" [disabled]="saving()">Annuler</button>
+        <button type="button" class="save-and-new-button" (click)="saveAndCreateAnother()" [disabled]="saving()">Sauver et créer un autre</button>
+        <button type="button" class="save-button" (click)="save()" [disabled]="saving()">{{ isEdit() ? 'Sauver' : 'Créer' }}</button>
+      </div>
+    </form>
+  }
+</div>

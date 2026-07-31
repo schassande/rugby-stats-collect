@@ -61,13 +61,13 @@ export const routes: Routes = [
       },
 
       { // Page de consultation d'un evenement d'un match
-        path: 'event/:eventId',
-        loadComponent: () => import('./features/events/event-detail.component').then((m) => m.EventDetailComponent)
+        path: 'event/:eventId/edit',
+        loadComponent: () => import('./features/events/event-edit.component').then((m) => m.EventEditComponent)
       },
 
       { // Page de modification d'un evenement
         path: 'event/:eventId',
-        loadComponent: () => import('./features/events/event-edit.component').then((m) => m.EventEditComponent)
+        loadComponent: () =>  import('./features/events/event-detail.component').then((m) => m.EventDetailComponent)
       },
 
       { path: '**', redirectTo: 'home' }

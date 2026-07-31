@@ -53,6 +53,7 @@ import { LocalUser } from '@core/db/rugby-stats.database';
     `
       .login-container {
         max-width: 420px;
+        width: calc(100% - 2rem);
         margin: 1rem auto;
         padding: 2rem;
         background: #ffffff;
@@ -87,6 +88,11 @@ import { LocalUser } from '@core/db/rugby-stats.database';
       }
       .form-field {
         margin-bottom: 1rem;
+      }
+      .form-field input {
+        display: block;
+        width: 100%;
+        min-width: 0;
       }
 
       .actions {

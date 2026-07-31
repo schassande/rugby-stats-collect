@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { db } from '../db/rugby-stats.database';
-import { Evenement, Match, Equipe, Manager, SyncOperation } from '../models/datamodel';
+import { Evenement, Match, Equipe, Manager, Saison, SyncOperation } from '../models/datamodel';
 
 @Injectable({
   providedIn: 'root'
@@ -46,6 +46,14 @@ export class DatabaseService {
 
   async getMatchesByTeam(teamId: number): Promise<Match[]> {
     return db.matches.where('equipeId').equals(teamId).toArray();
+  }
+
+  async getMatchesByTeamNSeason(teamId: number, season: Saison): Promise<Match[]> {
+    return db.matches
+      .where('equipeId')
+      .equals(teamId)
+      .filter(match => match.saison === season)
+      .toArray();
   }
 
   async getMatch(matchId: number): Promise<Match | undefined> {
