@@ -357,8 +357,8 @@ export class MatchEditComponent implements OnInit {
         this.db.updateMatch({ ...data, id: this.match!.id } as Match);
       } else {
         this.match = await this.db.addMatch(data);
-        this.router.navigate(['/app/match', this.match!.id]);
       }
+      this.router.navigate(['/app/match', this.match!.id]);
     } catch {
       this.error.set('Impossible de sauvegarder le match.');
     } finally {

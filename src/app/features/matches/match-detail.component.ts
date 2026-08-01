@@ -15,7 +15,7 @@ import { CardModule } from 'primeng/card';
   template: `
     @if (match()) {
     <section>
-      <h2>Match contre {{match().nomAdversaire}}</h2>
+      <h2>Match contre {{match().nomAdversaire}} <i class="fa fa-pencil link" aria-hidden="true" (click)="editMatch()"></i></h2>
       <div class="match-info" aria-label="Informations du match">
         <div>Saison : {{ match().saison }} · Lieu : {{ match().lieu || 'Non renseigné' }}</div>
         <div>Date : {{ match().date | date:'yyyy/MM/dd' }} · Début : {{ match().debut || 'Non renseigné' }}@if (match().fin) { · Fin : {{ match().fin }} }</div>
@@ -89,7 +89,11 @@ import { CardModule } from 'primeng/card';
     .buttons pi{
       font-weight: bold;
       font-size: 1.5rem;
-    }  `]
+    }
+    .link:hover {
+      cursor: pointer;
+    }
+    `]
 })
 export class MatchDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -149,5 +153,8 @@ export class MatchDetailComponent implements OnInit {
   }
   viewEvent(event: Evenement) {
     this.router.navigate([`/app/event/${event.id}/edit`]);
+  }
+  editMatch() {
+    this.router.navigate([`/app/match/${this.match().id}/edit`]);
   }
 }
