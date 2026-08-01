@@ -1,4 +1,4 @@
-import { Equipe, Evenement, Manager, Match, SyncOperation } from '@core/models/datamodel';
+import { Equipe, Evenement, Manager, Match, SyncAction } from '@core/models/datamodel';
 import Dexie, { Table } from 'dexie';
 
 
@@ -12,7 +12,7 @@ export class RugbyStatsDB extends Dexie {
   equipes!: Table<Equipe>;
   matches!: Table<Match>;
   evenements!: Table<Evenement>;
-  operations_queue!: Table<SyncOperation>;
+  sync_actions!: Table<SyncAction>;
 
   constructor() {
     super('RugbyStatsDB');
@@ -21,8 +21,8 @@ export class RugbyStatsDB extends Dexie {
       managers: '++id',
       equipes: '++id, saison',
       matches: '++id, equipeId, date',
-      evenements: '++id, matchId, instant, createdAt',
-      operations_queue: '++id, evenementId, matchId, status, createdAt',
+      evenements: '++id, matchId',
+      sync_actions: '++id, status, createdAt',
     });
     //console.log('Local database started.');
   }

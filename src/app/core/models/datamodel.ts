@@ -296,18 +296,18 @@ export const DEFAUT_TYPE_EVENEMENT : { nature: NatureEvenement, type: TypeEvenem
   {nature: 'REMPLACEMENT', type: 'NORMAL'}
 ];
 // =============================================================
-export type OperationStatus = 'pending' | 'syncing' | 'synced' | 'conflict' | 'failed';
-
-export interface SyncOperation {
-  id: string;
-  evenementId: number;
-  matchId: number;
-  operation: 'create' | 'update' | 'delete';
-  status: OperationStatus;
-  data: Evenement;
+export type SyncObjectType = 'Equipe' | 'Match' | 'Evenement'
+export type SyncActionType = 'create' | 'update' | 'delete'
+export type SyncActionStatus = 'pending' | 'syncing' | 'synced' | 'conflict' | 'failed';
+export interface SyncAction {
+  id: number;
+  objectType: SyncObjectType;
+  objectId: number;
+  actionType: SyncActionType;
+  status: SyncActionStatus;
   createdAt: string;
   updatedAt: string;
   error?: string;
-  retryCount: number;
+  retryCount?: number;
   lastRetry?: string;
 }

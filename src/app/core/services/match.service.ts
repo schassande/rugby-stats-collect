@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, from, map, mergeMap, Observable, of } from 'rxjs';
-import { Equipe, Evenement, Match, Saisons } from '@core/models/datamodel';
+import { BehaviorSubject } from 'rxjs';
+import { Evenement, Match, Saisons } from '@core/models/datamodel';
 import { DatabaseService } from '@core/services/database.service';
 import { AuthService } from './auth.service';
 

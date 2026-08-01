@@ -5,6 +5,8 @@ import { db } from '@core/db/rugby-stats.database';
 import { TeamService } from '@core/services/team.service';
 import { MatchService } from '@core/services/match.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { SyncService } from '@core/services/sync.service';
+import { DatabaseService } from '@core/services/database.service';
 
 @Component({
   selector: 'app-root',
@@ -34,11 +36,16 @@ import { toSignal } from '@angular/core/rxjs-interop';
               </a>
             }
             @if (matchSelectionne()) {
-            <a (click)="voirMatchSelectionne()" class="tab-item">
+              <a (click)="voirMatchSelectionne()" class="tab-item">
                 <img class="tab-icon nav-icon" src="/icons/rugby.svg" alt="" aria-hidden="true" />
                 <span class="nav-label">Le match</span>
               </a>
             }
+            <a routerLink="/app/sync" class="tab-item">
+              <i class="fa fa-refresh" aria-hidden="true"></i>
+              <span>{{pendingSync()}}</span>
+            </a>
+            
             <a (click)="logout()" icon="pi pi-trash">
               <i class="pi pi-sign-out nav-icon"></i> 
               <span class="nav-label">Se Déconnecter</span>
@@ -147,6 +154,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 })
 export class App implements OnInit {
   private readonly authService = inject(AuthService);
+  private readonly syncService = inject(SyncService);
+  private readonly databaseService = inject(DatabaseService);
   private readonly auth = inject(AuthService);
   private readonly teamService = inject(TeamService);
   private readonly matchService = inject(MatchService);
@@ -155,6 +164,7 @@ export class App implements OnInit {
   user = toSignal(this.auth.currentManager$);
   equipeSelectionnee = toSignal(this.teamService.currentTeam$);
   matchSelectionne = toSignal(this.teamService.currentTeam$);
+  pendingSync = toSignal(this.databaseService.currentPendingSync$)
 
   voirMatchSelectionne() {
     this.router.navigate(['/app/match', this.matchService.getCurrentMatch()!.id])

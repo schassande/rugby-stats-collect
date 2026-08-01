@@ -38,8 +38,7 @@ export interface OptionSelectButtonOption<T extends string | number = string> {
 
     :host ::ng-deep .p-selectbutton .p-togglebutton {
       flex: 0 0 6rem;
-      width: 7rem;
-      min-width: 7rem;
+      width: 5rem;
       justify-content: center;
       border-radius: 0.75rem;
       border: 1px solid grey;
@@ -75,7 +74,7 @@ export interface OptionSelectButtonOption<T extends string | number = string> {
       justify-content: center;
       text-align: center;
       gap: 0.1rem;
-      font-size: 1rem;
+      font-size: 0.9rem;
     }
 
     .option-select-button-label {
@@ -85,8 +84,8 @@ export interface OptionSelectButtonOption<T extends string | number = string> {
     }
 
     .option-select-button-item img {
-      width: 5rem;
-      height: 5rem;
+      width: 4rem;
+      height: 4rem;
       object-fit: contain;
     }
   `]
