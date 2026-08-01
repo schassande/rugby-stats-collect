@@ -33,7 +33,7 @@
           (valueChange)="onTypeChange($event)" />
       }
       @if (config()?.equipe) {
-        <h3>Equipe <span class="required-field">*</span></h3>
+        <h3>Equipe @if (form.controls.equipe.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <div class="equipe-options">
           <span class="equipe-option">
             <p-radiobutton formControlName="equipe" name="equipe" inputId="equipe-nous"
@@ -49,32 +49,32 @@
 
       }
       @if (config()?.resultatMelee) {
-        <h3>Résultat Mêlée <span class="required-field">*</span></h3>
+        <h3>Résultat Mêlée @if (form.controls.resultatMelee.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <app-option-select-button [options]="resultatMeleeOptions" [value]="form.controls.resultatMelee.value ?? null" (valueChange)="onResultatMeleeChange($any($event))" />
       }
       @if (config()?.resultatMaul) {
-        <h3>Résultat Maul<span class="required-field">*</span></h3>
+        <h3>Résultat Maul @if (form.controls.resultatMaul.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <app-option-select-button [options]="resultatMaulOptions" [value]="form.controls.resultatMaul.value ?? null" (valueChange)="onResultatMaulChange($any($event))" />
       }
       @if (config()?.resultatRuck) { 
-        <h3>Résultat Ruck <span class="required-field">*</span></h3>
+        <h3>Résultat Ruck @if (form.controls.resultRuck.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <app-option-select-button [options]="resultatRuckOptions" [value]="form.controls.resultRuck.value ?? null" (valueChange)="onResultatRuckChange($any($event))" />
       }
       @if (config()?.resultatTouche) { 
-        <h3>Résultat touche <span class="required-field">*</span></h3>
+        <h3>Résultat touche @if (form.controls.resultatTouche.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <app-option-select-button [options]="resultatToucheOptions" [value]="form.controls.resultatTouche.value ?? null" (valueChange)="onResultatToucheChange($any($event))" />
       }
       @if (config()?.recuperation) { 
-        <h3>Récupération <span class="required-field">*</span></h3>
+        <h3>Récupération @if (form.controls.recuperation.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <app-option-select-button [options]="recuperationOptions" [value]="form.controls.recuperation.value ?? null" (valueChange)="onRecuperationChange($any($event))" />
       }
       @if (config()?.resultat && (event()!.type != 'PENALITE' || event()!.choixDeJeuPenalite == 'POTEAU')) { 
-        <h3>Résultat <span class="required-field">*</span></h3>
+        <h3>Résultat @if (form.controls.resultat.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <app-option-select-button [options]="resultatOptions" [value]="form.controls.resultat.value ?? null" (valueChange)="onResultatChange($any($event))" />
         
       }
       @if (config()?.zoneTerrain) {
-        <h3>Zone de terrain <span class="required-field">*</span></h3>
+        <h3>Zone de terrain @if (form.controls.zoneTerrain.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <div class="zone-terrain-choice">
           <img src="/icons/event/zone_terrain.png" alt="4 zones dans le terrain de rugby"/>
           <div class="zone-terrain-options">
@@ -90,7 +90,7 @@
         </div>
       }
       @if (config()?.positionLargeur) {
-        <h3>Position sur la largeur <span class="required-field">*</span></h3>
+        <h3>Position sur la largeur @if (form.controls.positionLargeur.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <div class="position-largeur-choice">
           <img src="/icons/event/position_largeur.png" alt="Position sur la largeur du terrain" />
           <div class="position-largeur-options">
@@ -106,7 +106,7 @@
         </div>
       }
       @if (config()?.fautesPenalite) { 
-        <h3>Faute Penalité</h3>
+        <h3>Faute Penalité @if (form.controls.fautesPenalite.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <div class="fautes-penalite-options">
           @for (option of fautesPenaliteOptions; track option.value) {
             <div class="fautes-penalite-option">
@@ -119,21 +119,21 @@
         </div> 
       }
       @if (config()?.complementDiscipline) { 
-        <h3>Complément discipline <span class="required-field">*</span></h3>
+        <h3>Complément discipline @if (form.controls.complementDiscipline.hasValidator(requiredValidator)) {<span class="required-field">*</span>} </h3>
         <app-option-select-button
           [options]="complementDisciplineOptions"
           [value]="form.controls.complementDiscipline.value ?? null"
           (valueChange)="onComplementDisciplineChange($any($event))" />
       }
       @if (config()?.choixDeJeuPenalite) {
-        <h3>Choix de Jeu Pénalité</h3>
+        <h3>Choix de Jeu Pénalité @if (form.controls.choixDeJeuPenalite.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <app-option-select-button
           [options]="choixDeJeuPenaliteOptions"
           [value]="form.controls.choixDeJeuPenalite.value ?? null"
           (valueChange)="onChoixDeJeuPenaliteChange($any($event))" />
       }
       @if (config()?.fautesBrasCasse) { 
-        <h3>Faute bras cassé</h3>
+        <h3>Faute bras cassé @if (form.controls.fautesBrasCasse.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <div class="fautes-bras-casse-options">
           @for (option of fautesBrasCasseOptions; track option.value) {
             <div class="fautes-bras-casse-option">
@@ -146,14 +146,14 @@
         </div>
       }
       @if (config()?.choixDeJeuBrasCasse) { 
-        <h3>Choix de jeu sur le coup franc</h3>
+        <h3>Choix de jeu sur le coup franc @if (form.controls.choixDeJeuBrasCasse.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <app-option-select-button
           [options]="choixDeJeuBrasCasseOptions"
           [value]="form.controls.choixDeJeuBrasCasse.value ?? null"
           (valueChange)="onChoixDeJeuBrasCasseChange($any($event))" />
       }
       @if (config()?.zoneLancee) {
-        <h3>Zone de lancée <span class="required-field">*</span></h3>
+        <h3>Zone de lancée @if (form.controls.zoneLancee.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <div class="zone-lance-choice">
           <img src="/icons/event/zone_lance.png" alt="Zone du lancé en touche" />
           <div class="zone-lance-options">
@@ -169,7 +169,7 @@
         </div>
       }
       @if (config()?.distanceJeuPied) {
-        <h3>Distance</h3>
+        <h3>Distance @if (form.controls.distanceJeuPied.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <div class="distance-jeu-pied-container">
           <div class="distance-jeu-pied">
             <label for="distance-jeu-pied">Distance</label>
@@ -180,11 +180,11 @@
         </div>
       }
       @if (config()?.numeroJoueur1) { 
-        <h3>Numéro du joueur</h3>
+        <h3>Numéro du joueur @if (form.controls.numeroJoueur1.hasValidator(requiredValidator)) { <span class="required-field">*</span>}</h3>
         <div class="numero-joueurs-container">
           <div class="numero-joueurs">
             <label for="numero-joueur-1">Joueur 1</label>
-            <p-inputnumber inputId="numero-joueur-1" formControlName="numeroJoueur1"
+            <p-inputnumber inputId="numero-joueur-1" formControlName="numeroJoueur1" #numeroJoueur1
               [min]="1" [max]="99" [showButtons]="true" [useGrouping]="false"
               (onInput)="onNumeroJoueur1Change($event.value)" />
           </div>

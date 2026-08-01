@@ -12,6 +12,7 @@ import { EvenementService } from '@core/services/evenement.service';
 import { configsTypeEvenemnt, ChoixDeJeuBrasCasse, ChoixDeJeuPenalite, ComplementDiscipline, EquipeCode, Evenement, FautesBrasCasse, FautesPenalite, Match, NatureEvenement, Periode, PositionLargeur, Resultat, ResultatMelee, ResultatMaul, ResultatRuck, ResultatTouche, Recuperation, TypeEvenement, ZoneLancee, ZoneTerrain, ConfigTypeEvenement, DEFAUT_TYPE_EVENEMENT } from '@core/models/datamodel';
 import { MatchService } from '@core/services/match.service';
 import { ButtonModule } from 'primeng/button';
+import { EVENT_NATURE_OPTIONS, FAUTES_BRAS_CASSE_OPTIONS, FAUTES_PENALITE_OPTIONS, CHOIX_DE_JEU_PENALITE_OPTIONS, CHOIX_DE_JEU_BRAS_CASSE_OPTIONS, COMPLEMENT_DISCIPLINE_OPTIONS, Option, POSITION_LARGEUR_OPTIONS, RECUPERATION_OPTIONS, RESULTAT_OPTIONS, RESULTAT_MELEE_OPTIONS, RESULTAT_MAUL_OPTIONS, RESULTAT_RUCK_OPTIONS, RESULTAT_TOUCHE_OPTIONS, ZONE_TERRAIN_OPTIONS } from './event-edit.options';
 
 @Component({
   selector: 'app-event-edit',
@@ -88,6 +89,7 @@ export class EventEditComponent implements OnInit {
     recuperation: [undefined as Recuperation | undefined],
     resultat: [undefined as Resultat | undefined],
   });
+  protected readonly requiredValidator = Validators.required;
 
 
   private besoinCalculerScore = false;
@@ -166,6 +168,10 @@ export class EventEditComponent implements OnInit {
     if (this.config()?.equipe && !this.event()!.equipe) {
        this.form.patchValue({ equipe: 'NOUS' });
       this.event()!.equipe = 'NOUS';
+    }
+    if (this.config()?.complementDiscipline && !this.event()!.complementDiscipline) {
+       this.form.patchValue({ complementDiscipline: 'AUCUN' });
+      this.event()!.complementDiscipline = 'AUCUN';
     }
     this.updateValidators();
   }
@@ -314,6 +320,10 @@ export class EventEditComponent implements OnInit {
     this.updateControl(this.form.controls.zoneLancee, this.config()?.zoneLancee);
 
     this.updateControl(this.form.controls.complementDiscipline, this.config()?.complementDiscipline);
+    this.updateControl(this.form.controls.choixDeJeuPenalite, this.config()?.choixDeJeuPenalite);
+    this.updateControl(this.form.controls.choixDeJeuBrasCasse, this.config()?.choixDeJeuBrasCasse);
+    this.updateControl(this.form.controls.numeroJoueur1, this.event()?.nature === 'REMPLACEMENT');
+    this.updateControl(this.form.controls.numeroJoueur2, this.event()?.nature === 'REMPLACEMENT');
   }
 
   private updateControl(control: FormControl, required: boolean = false) {
@@ -334,7 +344,8 @@ export class EventEditComponent implements OnInit {
   }
 }
 
-export interface Option<T> {
+/* option definitions moved to event-edit.options.ts */
+/*
   label: string;
   value: T; 
   icon?: string;
@@ -494,3 +505,4 @@ export const EVENT_NATURE_OPTIONS : Option<NatureEvenement>[] = [
       icon: `/icons/event/${nat.nature}.png` 
     } as Option<NatureEvenement>; 
   });
+*/
