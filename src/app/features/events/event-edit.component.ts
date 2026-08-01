@@ -108,7 +108,8 @@ export class EventEditComponent implements OnInit {
         this.error.set('Impossible de créer un événement pour un match introuvable');
         return;
       }
-      
+      this.matchService.setCurrentMatch(this.match())
+
       this.form.patchValue({
         periode: this.event()!.periode,
         equipe: this.event()!.equipe,

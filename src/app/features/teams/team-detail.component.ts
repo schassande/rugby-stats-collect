@@ -115,8 +115,10 @@ export class TeamDetailComponent implements OnInit {
     if (teamId) {
       this.team.set(await this.db.getTeam(+teamId));
     } else {
-      this.router.navigate(['/app/home']);      
+      this.router.navigate(['/app/home']);
+      return;
     }
+    this.teamService.setCurrentTeam(this.team());
   }
 
   viewMatch(match: Match) {

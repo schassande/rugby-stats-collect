@@ -14,8 +14,11 @@ export class MatchService {
   private readonly auth = inject(AuthService);
   private readonly databaseService = inject(DatabaseService);
 
-  public setcurrentMatch(match: Match) {
+  public setCurrentMatch(match: Match|undefined) {
     this.currentMatchSubject.next(match);
+  }
+  public getCurrentMatch(): Match|undefined {
+    return this.currentMatchSubject.getValue();
   }
 
   public emptyMatch(): Match {

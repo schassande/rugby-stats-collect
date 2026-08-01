@@ -15,7 +15,7 @@ import { CardModule } from 'primeng/card';
   template: `
     @if (match()) {
     <section>
-      <h2>Match contre {{match().nomAdversaire}} <i class="fa fa-pencil link" aria-hidden="true" (click)="editMatch()"></i></h2>
+      <h2>Match contre <br>{{match().nomAdversaire}} <i class="fa fa-pencil link" aria-hidden="true" (click)="editMatch()"></i></h2>
       <div class="match-info" aria-label="Informations du match">
         <div>Saison : {{ match().saison }} · Lieu : {{ match().lieu || 'Non renseigné' }}</div>
         <div>Date : {{ match().date | date:'yyyy/MM/dd' }} · Début : {{ match().debut || 'Non renseigné' }}@if (match().fin) { · Fin : {{ match().fin }} }</div>
@@ -114,6 +114,8 @@ export class MatchDetailComponent implements OnInit {
       this.router.navigate(['/app/home']);
       return;
     }
+    this.matchService.setCurrentMatch(this.match())
+    this.teamService.setCurrentTeam(this.team())
     // chargement de la liste des événements
     this.loadMatchEvents();
   }

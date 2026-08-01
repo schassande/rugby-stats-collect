@@ -68,9 +68,12 @@ export class TeamService {
     this.teamsSubject.next(filtered);
   }
 
-  async setCurrentTeam(team: Equipe){
+  async setCurrentTeam(team: Equipe|undefined){
     this.currentTeamSubject.next(team);
     // TODO Stockage localement de l'id de l'équipe courante
+  }
+  public getCurrentTeam(): Equipe|undefined {
+    return this.currentTeamSubject.getValue();
   }
 
   public currentSeason(): Saison {
