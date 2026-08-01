@@ -22,7 +22,8 @@ export class DatabaseService {
   }
 
   async getEventsByMatch(matchId: number): Promise<Evenement[]> {
-    return db.evenements.where('matchId').equals(matchId).toArray();
+    const events = await db.evenements.where('matchId').equals(matchId).toArray();
+    return events.sort((a, b) => b.instant.localeCompare(a.instant));
   }
 
   async getEvent(eventId: number): Promise<Evenement | undefined> {

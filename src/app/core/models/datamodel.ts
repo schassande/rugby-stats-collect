@@ -73,7 +73,7 @@ export interface Evenement {
   instant: string;
   minute?: number;
   seconde?: number;
-  equipe: EquipeCode;
+  equipe?: EquipeCode;
   nature: NatureEvenement;
   type: TypeEvenement;
   rapporteurId: string;
@@ -210,6 +210,7 @@ export class ConfigTypeEvenement {
   resultat: boolean = false;
   noIcon = false;
   equipe = false;
+  periode = false;
   constructor(
     public nature: NatureEvenement,
     public type: TypeEvenement,
@@ -235,6 +236,7 @@ export class ConfigTypeEvenement {
   _resultat(): ConfigTypeEvenement {this.resultat = true; return this}
   _noIcon(): ConfigTypeEvenement {this.noIcon = true; return this}
   _equipe(): ConfigTypeEvenement {this.equipe = true; return this}
+  _periode(): ConfigTypeEvenement {this.periode = true; return this}
 }
 
 
@@ -246,44 +248,53 @@ export const configsTypeEvenemnt : ConfigTypeEvenement[] = [
   new ConfigTypeEvenement('TEMPS', 'FIN_MATCH', 'Fin du match', ),
   new ConfigTypeEvenement('TEMPS', 'PROLONGATION', 'Prolongation', ),
 
-  new ConfigTypeEvenement('SCORE', 'ESSAI', 'Essai', )._numeroJoueur1()._positionLargeur()._equipe(),
-  new ConfigTypeEvenement('SCORE', 'TRANSFORMATION', 'Transfo')._numeroJoueur1()._positionLargeur()
-    ._distanceJeuPied()._resultat()._equipe(),
+  new ConfigTypeEvenement('SCORE', 'ESSAI', 'Essai', )._numeroJoueur1()._positionLargeur()._equipe()._periode(),
+  new ConfigTypeEvenement('SCORE', 'TRANSFORMATION', 'Transfo')._numeroJoueur1()._positionLargeur()._periode()
+    ._distanceJeuPied()._resultat()._equipe()._periode(),
   new ConfigTypeEvenement('SCORE', 'DROP', 'Drop')._numeroJoueur1()._positionLargeur()._distanceJeuPied()._equipe()
-    ._zoneTerrain()._resultat(),
+    ._zoneTerrain()._resultat()._periode(),
 
-  new ConfigTypeEvenement('CONQUETE', 'TOUCHE', 'Touche')._zoneTerrain()._zoneLancee()._resultatTouche()._equipe(),
-  new ConfigTypeEvenement('CONQUETE', 'MELEE', 'Mêlée')._zoneTerrain()._positionLargeur()._resultatMelee()._equipe(),
-  new ConfigTypeEvenement('CONQUETE', 'MAUL', 'Maul')._zoneTerrain()._positionLargeur()._resultatMaul()._equipe(),
-  new ConfigTypeEvenement('CONQUETE', 'CHANDELLE', 'Chandelle')._zoneTerrain()._positionLargeur()._recuperation()._equipe(),
-  new ConfigTypeEvenement('CONQUETE', 'RENVOI', 'Renvoi')._zoneTerrain()._positionLargeur()._recuperation()._equipe(),
+  new ConfigTypeEvenement('CONQUETE', 'TOUCHE', 'Touche')._zoneTerrain()._zoneLancee()._resultatTouche()._equipe()._periode(),
+  new ConfigTypeEvenement('CONQUETE', 'MELEE', 'Mêlée')._zoneTerrain()._positionLargeur()._resultatMelee()._equipe()._periode(),
+  new ConfigTypeEvenement('CONQUETE', 'MAUL', 'Maul')._zoneTerrain()._positionLargeur()._resultatMaul()._equipe()._periode(),
+  new ConfigTypeEvenement('CONQUETE', 'CHANDELLE', 'Chandelle')._zoneTerrain()._positionLargeur()._recuperation()._equipe()._periode(),
+  new ConfigTypeEvenement('CONQUETE', 'RENVOI', 'Renvoi')._zoneTerrain()._positionLargeur()._recuperation()._equipe()._periode(),
 
-  new ConfigTypeEvenement('ERREUR', 'EN_AVANT', 'En avant')._zoneTerrain()._positionLargeur()._numeroJoueur1()._equipe(),
+  new ConfigTypeEvenement('ERREUR', 'EN_AVANT', 'En avant')._zoneTerrain()._positionLargeur()._numeroJoueur1()._equipe()._periode()._noIcon(),
   new ConfigTypeEvenement('ERREUR', 'COUP_EN_TOUCHE_DIRECT', 'Touche direct')._zoneTerrain()._positionLargeur()._equipe()
-    ._numeroJoueur1(),
-  new ConfigTypeEvenement('ERREUR', 'SORTIE_TOUCHE', 'Sortie')._zoneTerrain()._numeroJoueur1()._equipe(),
+    ._numeroJoueur1()._periode()._noIcon(),
+  new ConfigTypeEvenement('ERREUR', 'SORTIE_TOUCHE', 'Sortie')._zoneTerrain()._numeroJoueur1()._equipe()._periode()._noIcon(),
 
-  new ConfigTypeEvenement('FAIT_DE_JEU', 'RUCK', 'Ruck')._resultatRuck()._zoneTerrain()._numeroJoueur1()._noIcon()._equipe(),
+  new ConfigTypeEvenement('FAIT_DE_JEU', 'RUCK', 'Ruck')._resultatRuck()._zoneTerrain()._numeroJoueur1()._noIcon()._equipe()._periode(),
   new ConfigTypeEvenement('FAIT_DE_JEU', 'DEGAGEMENT_TOUCHE', 'Dégagement Touche')._zoneTerrain()
-    ._distanceJeuPied()._numeroJoueur1()._resultat()._noIcon()._equipe(),
-  new ConfigTypeEvenement('FAIT_DE_JEU', 'ARRET_VOLEE', 'Arrêt de volée')._positionLargeur()._numeroJoueur1()._noIcon()._equipe(),
-  new ConfigTypeEvenement('FAIT_DE_JEU', 'INTERCEPTION', 'Interception')._zoneTerrain()._numeroJoueur1()._noIcon()._equipe(),
-  new ConfigTypeEvenement('FAIT_DE_JEU', '50_22', '50-22')._numeroJoueur1()._noIcon()._equipe(),
-  new ConfigTypeEvenement('FAIT_DE_JEU', 'ESSAI_SAUVE_SUR_MAUL', 'Essai sauvé sur maul')._numeroJoueur1()._noIcon()._equipe(),
+    ._distanceJeuPied()._numeroJoueur1()._resultat()._noIcon()._equipe()._periode(),
+  new ConfigTypeEvenement('FAIT_DE_JEU', 'ARRET_VOLEE', 'Arrêt de volée')._positionLargeur()._numeroJoueur1()._noIcon()._equipe()._periode(),
+  new ConfigTypeEvenement('FAIT_DE_JEU', 'INTERCEPTION', 'Interception')._zoneTerrain()._numeroJoueur1()._noIcon()._equipe()._periode(),
+  new ConfigTypeEvenement('FAIT_DE_JEU', '50_22', '50-22')._numeroJoueur1()._noIcon()._equipe()._periode(),
+  new ConfigTypeEvenement('FAIT_DE_JEU', 'ESSAI_SAUVE_SUR_MAUL', 'Essai sauvé sur maul')._numeroJoueur1()._noIcon()._equipe()._periode(),
 
   new ConfigTypeEvenement('DISCIPLINE', 'PENALITE', 'Pénalité')._fautesPenalite()._complementDiscipline()
-    ._choixDeJeuPenalite()._zoneTerrain()._positionLargeur()._numeroJoueur1()._resultat()._equipe(),
+    ._choixDeJeuPenalite()._zoneTerrain()._positionLargeur()._numeroJoueur1()._resultat()._equipe()._periode(),
   new ConfigTypeEvenement('DISCIPLINE', 'BRAS_CASSE', 'Bras cassé')._fautesBrasCasse()._choixDeJeuBrasCasse()._zoneTerrain()
-    ._positionLargeur()._numeroJoueur1()._equipe(),
+    ._positionLargeur()._numeroJoueur1()._equipe()._periode(),
 
-  new ConfigTypeEvenement('REMPLACEMENT', 'NORMAL', 'Normal')._numeroJoueur1()._numeroJoueur2()._equipe(),
-  new ConfigTypeEvenement('REMPLACEMENT', 'BLESSURE', 'Sur blessure')._numeroJoueur1()._numeroJoueur2()._equipe(),
-  new ConfigTypeEvenement('REMPLACEMENT', 'SAIGNEMENT', 'Sang')._numeroJoueur1()._numeroJoueur2()._equipe(),
-  new ConfigTypeEvenement('REMPLACEMENT', 'RETOUR_SAIGNEMENT', 'Retour sang')._numeroJoueur1()._numeroJoueur2()._equipe(),
-  new ConfigTypeEvenement('REMPLACEMENT', 'PROTCOLE_COMMOTION', 'Protocole Commo')._numeroJoueur1()._numeroJoueur2()._equipe(),
-  new ConfigTypeEvenement('REMPLACEMENT', 'REOUR_PROTCOLE_COMMOTION', 'Retour Commo')._numeroJoueur1()._numeroJoueur2()._equipe(),
+  new ConfigTypeEvenement('REMPLACEMENT', 'NORMAL', 'Normal')._numeroJoueur1()._numeroJoueur2()._equipe()._periode(),
+  new ConfigTypeEvenement('REMPLACEMENT', 'BLESSURE', 'Sur blessure')._numeroJoueur1()._numeroJoueur2()._equipe()._periode(),
+  new ConfigTypeEvenement('REMPLACEMENT', 'SAIGNEMENT', 'Sang')._numeroJoueur1()._numeroJoueur2()._equipe()._periode(),
+  new ConfigTypeEvenement('REMPLACEMENT', 'RETOUR_SAIGNEMENT', 'Retour sang')._numeroJoueur1()._numeroJoueur2()._equipe()._periode(),
+  new ConfigTypeEvenement('REMPLACEMENT', 'PROTCOLE_COMMOTION', 'Protocole Commo')._numeroJoueur1()._numeroJoueur2()._equipe()._periode(),
+  new ConfigTypeEvenement('REMPLACEMENT', 'REOUR_PROTCOLE_COMMOTION', 'Retour Commo')._numeroJoueur1()._numeroJoueur2()._equipe()._periode(),
 ];
 
+export const DEFAUT_TYPE_EVENEMENT : { nature: NatureEvenement, type: TypeEvenement }[]= [
+  {nature: 'TEMPS', type: 'DEBUT_MATCH'},
+  {nature: 'SCORE', type: 'ESSAI'},
+  {nature: 'CONQUETE', type: 'TOUCHE'},
+  {nature: 'FAIT_DE_JEU', type: 'RUCK'},
+  {nature: 'ERREUR', type: 'EN_AVANT'},
+  {nature: 'DISCIPLINE', type: 'PENALITE'},
+  {nature: 'REMPLACEMENT', type: 'NORMAL'}
+];
 // =============================================================
 export type OperationStatus = 'pending' | 'syncing' | 'synced' | 'conflict' | 'failed';
 

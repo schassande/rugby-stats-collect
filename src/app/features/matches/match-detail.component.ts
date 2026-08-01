@@ -15,7 +15,7 @@ import { CardModule } from 'primeng/card';
   template: `
     @if (match()) {
     <section>
-      <h2>Matche contre {{match().nomAdversaire}}</h2>
+      <h2>Match contre {{match().nomAdversaire}}</h2>
       <div class="match-info" aria-label="Informations du match">
         <div>Saison : {{ match().saison }} · Lieu : {{ match().lieu || 'Non renseigné' }}</div>
         <div>Date : {{ match().date | date:'yyyy/MM/dd' }} · Début : {{ match().debut || 'Non renseigné' }}@if (match().fin) { · Fin : {{ match().fin }} }</div>
@@ -29,7 +29,11 @@ import { CardModule } from 'primeng/card';
           <p-card>
             <div class="event-header" (click)="viewEvent(event)">
               <span>{{ event.instant | date: 'HH:mm:SS' }}: {{ event.nature }} · {{ event.type }} </span>
-              <strong>{{ event.equipe === 'NOUS' ? 'Nous' : match().nomAdversaire }}</strong>
+              <strong>{{ 
+                event.equipe === 'NOUS' 
+                ? 'Nous' 
+                : event.equipe === 'ADV' ? match().nomAdversaire : ""
+              }}</strong>
             </div>
             @if (event.commentaire) {
               <div>{{ event.commentaire }}</div>
@@ -47,15 +51,25 @@ import { CardModule } from 'primeng/card';
     }
     `,
   styles: [`
+    section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 5px;
+    }
     h2 {
       text-align: center;
+    }
+    h3 {
+      margin: 20px 0 10px 0;
     }
 
     .match-info {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
-      margin-top: 1rem;
+      width: fit-content;
+      margin: 1rem auto 0;
+      text-align: center;
     }
     .events-list {
       display: flex;
