@@ -9,3 +9,5 @@ TODO list
 - tester sur telephone dont le mode local
 - tester la creation de compte normal (pas google) + authentification
 
+DONE
+X Mettre la protection sur les tables firestore avec les règles (stocker les règles dans GIT). utiliser les managerId pour controler les acces

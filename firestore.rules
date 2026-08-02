@@ -1,0 +1,73 @@
+rules_version = '3';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Les identifiants applicatifs des managers sont leurs adresses e-mail.
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function currentManagerId() {
+      return request.auth.token.email;
+    }
+
+    function isCurrentManager(managerId) {
+      return signedIn() && currentManagerId() == managerId;
+    }
+
+    function managesTeam(teamId) {
+      return signedIn()
+        && currentManagerId() in get(/databases/$(database)/documents/Equipe/$(teamId)).data.managerIds;
+    }
+
+    function managesMatch(matchId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/Match/$(matchId)).data.managerId == currentManagerId();
+    }
+
+    function managesNestedMatch(teamId, matchId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/teams/$(teamId)/matches/$(matchId)).data.managerId == currentManagerId();
+    }
+
+    // Un compte authentifié peut créer son profil, mais seul son propriétaire
+    // peut ensuite le modifier ou le supprimer.
+    match /managers/{managerId} {
+      allow read: if isCurrentManager(managerId);
+      allow create: if isCurrentManager(managerId)
+        && request.resource.data.id == managerId;
+      allow update, delete: if isCurrentManager(managerId)
+        && resource.data.id == managerId
+        && request.resource.data.id == managerId;
+    }
+
+    // Collections utilisées par SyncService.
+    match /Equipe/{teamId} {
+      allow read: if signedIn() && currentManagerId() in resource.data.managerIds;
+      allow create: if signedIn() && currentManagerId() in request.resource.data.managerIds;
+      allow update, delete: if signedIn() && currentManagerId() in resource.data.managerIds;
+    }
+
+    match /Match/{matchId} {
+      allow read: if isCurrentManager(resource.data.managerId);
+      allow create: if isCurrentManager(request.resource.data.managerId)
+        && managesTeam(request.resource.data.equipeId);
+      allow update, delete: if isCurrentManager(resource.data.managerId)
+        && request.resource.data.managerId == resource.data.managerId
+        && request.resource.data.equipeId == resource.data.equipeId;
+    }
+
+    match /Evenement/{eventId} {
+      allow read: if managesMatch(resource.data.matchId);
+      allow create: if managesMatch(request.resource.data.matchId);
+      allow update: if managesMatch(resource.data.matchId)
+        && request.resource.data.matchId == resource.data.matchId;
+      allow delete: if managesMatch(resource.data.matchId);
+    }
+
+    // Tout chemin non explicitement déclaré reste fermé.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
