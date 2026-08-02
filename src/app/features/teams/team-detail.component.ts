@@ -7,19 +7,25 @@ import { DatabaseService } from '@core/services/database.service';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 import { TeamService } from '@core/services/team.service';
 
 @Component({
   selector: 'app-team-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, CardModule, ButtonModule, SelectModule],
+  imports: [CommonModule, FormsModule, CardModule, ButtonModule, SelectModule, ConfirmDialogModule],
+  providers: [ConfirmationService],
   template: `
     @if (team()) {
       <div class="team-detail">
         @if (team()?.logo) {
           <div class="logo"><img src={{team()?.logo}}/></div>
         }
-        <h2>{{ team()?.nom }}</h2>
+        <h2>
+          <span>{{ team()?.nom }}</span>
+          <i class="fa fa-pencil link" aria-hidden="true" (click)="editTeam()"></i>
+        </h2>
 
         <h3>Matchs</h3>
         <div class="season-selector">
@@ -36,6 +42,8 @@ import { TeamService } from '@core/services/team.service';
         <div class="matches-list">
           @for(match of matches() | async; track match.id) {  
             <p-card (click)="viewMatch(match)">
+              <div class="match-row">
+                <div class="match-content">
               {{ match.date | date:'yyyy/MM/dd' }} {{ match.debut }} vs {{ match.nomAdversaire }} à {{match.lieu}}
               @if (match.fin) {
                 <p>Terminé à {{match.fin}} sur 
@@ -46,6 +54,17 @@ import { TeamService } from '@core/services/team.service';
                   }}
                   {{ match.score.nous }}-{{ match.score.adversaire }}</p>
               }
+              </div>
+                <p-button
+                  icon="pi pi-trash"
+                  severity="danger"
+                  [text]="true"
+                  [rounded]="true"
+                  ariaLabel="Supprimer le match"
+                  title="Supprimer le match"
+                  (click)="deleteMatch(match, $event)">
+                </p-button>
+              </div>
             </p-card>
           } @empty {
            <p>Aucun match pour la saison {{season()}}. Cliquer sur le bouton + pour en ajoutant un.</p>
@@ -56,6 +75,7 @@ import { TeamService } from '@core/services/team.service';
         </div>
       </div>
     }
+    <p-confirmdialog></p-confirmdialog>
   `,
   styles: [`
     h2 { 
@@ -83,6 +103,15 @@ import { TeamService } from '@core/services/team.service';
       max-height: 100px;
       margin: 10px auto;
     }
+    .match-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .match-content {
+      flex: 1;
+    }
     .buttons {
       position: absolute;
       bottom: 90px;
@@ -92,7 +121,9 @@ import { TeamService } from '@core/services/team.service';
       font-weight: bold;
       font-size: 1.5rem;
     }
-    `]
+    .link { margin-left: 10px; }
+    .link:hover { cursor: pointer; }
+  `]
 })
 export class TeamDetailComponent implements OnInit {
   protected readonly seasons: Saison[] = Saisons;
@@ -100,10 +131,13 @@ export class TeamDetailComponent implements OnInit {
   private router = inject(Router);
   private db = inject(DatabaseService);
   private teamService = inject(TeamService);
+  private confirmationService = inject(ConfirmationService);
 
   team = signal<Equipe|undefined>(undefined);
   season = signal<Saison|undefined>(undefined);
+  private readonly matchesRefresh = signal(0);
   matches =  computed(async () => {
+    this.matchesRefresh();
     const t = this.team()
     const s = this.season();
     return t && s ? await this.db.getMatchesByTeamNSeason(t.id, s) : [];
@@ -125,6 +159,22 @@ export class TeamDetailComponent implements OnInit {
     this.router.navigate(['/app/match', match.id]);
   }
 
+  async deleteMatch(match: Match, event: Event) {
+    event.stopPropagation();
+    this.confirmationService.confirm({
+      message: `Supprimer le match contre ${match.nomAdversaire} ?`,
+      header: 'Confirmation de suppression',
+      icon: 'pi pi-exclamation-triangle',
+      rejectLabel: 'Annuler',
+      acceptLabel: 'Supprimer',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: async () => {
+        await this.db.deleteMatch(match.id);
+        this.matchesRefresh.update(value => value + 1);
+      }
+    });
+  }
+
   createMatch() {
     const t = this.team();
     if (t) {
@@ -132,6 +182,12 @@ export class TeamDetailComponent implements OnInit {
         ['/app/teams', t.id, 'match', 'new'],
         { queryParams: { saison: this.season() } }
       );
+    }
+  }
+  editTeam() {
+    const t = this.team();
+    if (t) {
+      this.router.navigate(['/app/teams', t.id, 'edit']);
     }
   }
 }

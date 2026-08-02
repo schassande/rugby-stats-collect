@@ -20,9 +20,16 @@ export class SyncService {
    * Synchronisation vers Firestore de toutes les données pending dans la base local.
    */
   public async uploadPending() {
-    (await this.databaseService.getPendingSyncs()).forEach(async sync => {
-      // recuperation de l'objet dans la base locale
-      let obj;
+    const syncs = await this.databaseService.getPendingSyncs();
+    await this.uploadAll(syncs);
+  }
+  public async uploadAll(syncs: SyncAction[]) {
+    syncs.forEach(async sync => this.upload(sync));
+  }
+  public async upload(sync: SyncAction) {
+    // recuperation de l'objet dans la base locale
+    let obj;
+    if (sync.actionType !== 'delete') {
       switch(sync.objectType) {
       case 'Equipe': 
         obj = await this.databaseService.getTeam(sync.objectId);
@@ -35,27 +42,37 @@ export class SyncService {
         break;
       }
       if (!obj) {
+        console.error('Upload impossible car l objet n existe pas dans la base locale', sync.objectType, sync.objectId);
         sync.status = 'failed';
         await this.databaseService.updateSync(sync);
         return;
       }
-      try {
-        switch(sync.actionType) {
-          case 'create' : 
-          case 'update' : 
-            await setDoc(doc(firestoreDatabase!, sync.objectType, ''+obj.id), obj);
-            break;
-          case 'delete' : 
-            const docRef = doc(firestoreDatabase!, sync.objectType, ''+obj.id);
-            await deleteDoc(docRef);
-            break;
-        }
-        sync.status = 'synced';
-      } catch (error) {
-        sync.status = 'failed';
+    }
+    try {
+      switch(sync.actionType) {
+        case 'create' : 
+          console.debug('Insertion dans firestore', sync.objectType, sync.objectId);
+          await setDoc(doc(firestoreDatabase!, sync.objectType, ''+sync.objectId), obj);
+          break;
+
+        case 'update' : 
+          console.debug('Mise à jour dans firestore', sync.objectType, sync.objectId);
+          await setDoc(doc(firestoreDatabase!, sync.objectType, ''+sync.objectId), obj);
+          break;
+        case 'delete' : 
+          console.debug('Suppression dans firestore', sync.objectType, sync.objectId);
+          const docRef = doc(firestoreDatabase!, sync.objectType, ''+sync.objectId);
+          await deleteDoc(docRef);
+          break;
       }
-      await this.databaseService.updateSync(sync);
-    });
+      sync.status = 'synced';
+    } catch (error) {
+      console.error('Erreur durant l upload sur firestore', sync.objectType, sync.objectId, error, obj);
+      sync.error = error as string + '\n' + JSON.stringify(obj, null, 2);
+      sync.status = 'failed';
+    }
+    console.debug('Mise à jour la synchronisation pour l objet', sync.objectType, sync.objectId);
+    await this.databaseService.updateSync(sync);
   }
 
   /** 

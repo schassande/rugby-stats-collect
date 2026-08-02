@@ -20,7 +20,7 @@ import { CardModule } from 'primeng/card';
         <div>Saison : {{ match().saison }} · Lieu : {{ match().lieu || 'Non renseigné' }}</div>
         <div>Date : {{ match().date | date:'yyyy/MM/dd' }} · Début : {{ match().debut || 'Non renseigné' }}@if (match().fin) { · Fin : {{ match().fin }} }</div>
         <div>Terrain : {{ match().terrain || 'Non renseigné' }} · Conditions : {{ match().conditions || 'Non renseignées' }}</div>
-        <div>Score {{ match().fin ? 'final' : ' actuel'}} : {{ match().score.nous }} / {{ match().score.adversaire }}</div>
+        <div>Score {{ match().fin ? 'final' : ' actuel'}} : {{ match().score.nous }} - {{ match().score.adversaire }}</div>
       </div>
       
       <h3>Liste des événements</h3>
@@ -28,7 +28,7 @@ import { CardModule } from 'primeng/card';
         @for (event of events(); track event.id) {
           <p-card>
             <div class="event-header" (click)="viewEvent(event)">
-              <span>{{ event.instant | date: 'HH:mm:SS' }}: {{ event.nature }} · {{ event.type }} </span>
+              <span>{{ event.instant | date: 'HH:mm:ss' }} : {{ event.nature }} - {{ event.type }} </span>
               <strong>{{ 
                 event.equipe === 'NOUS' 
                 ? 'Nous' 

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CardModule } from 'primeng/card';
 import { Equipe } from '@core/models/datamodel';
@@ -7,26 +7,42 @@ import { TeamService } from '@core/services/team.service';
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 
 @Component({
   selector: 'app-team-list',
   standalone: true,
-  imports: [CommonModule, CardModule, ButtonModule],
+  imports: [CommonModule, CardModule, ButtonModule, ConfirmDialogModule],
+  providers: [ConfirmationService],
   template: `
     <section>
       <h2>Mes Équipes</h2>
 
       <div class="teams-container">
         <div class="teams-grid">
-          @for (team of teams(); track team.id) {
+          @for (team of visibleTeams(); track team.id) {
             <p-card class="team-card" (click)="viewTeam(team)">
               <ng-template pTemplate="header">
-                @if (team.logo) {
-                  <div class="logo">
-                    <img src={{team.logo}}/>
+                <div class="team-header-row">
+                  <div class="team-info">
+                    @if (team.logo) {
+                      <div class="logo">
+                        <img src={{team.logo}}/>
+                      </div>
+                    }
+                    <div class="team-name">{{ team.nom }}</div>
                   </div>
-                }          
-                <div class="team-name">{{ team.nom }}</div>
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [text]="true"
+                    [rounded]="true"
+                    ariaLabel="Supprimer l'équipe"
+                    title="Supprimer l'équipe"
+                    (click)="deleteTeam(team, $event)">
+                  </p-button>
+                </div>
               </ng-template>
             </p-card>
           } @empty {
@@ -38,6 +54,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
         <p-button icon="pi pi-plus" rounded="true" size="large" (click)="createTeam()"></p-button>
       </div>
     </section>
+    <p-confirmdialog></p-confirmdialog>
   `,
   styles: [`
     h2 { 
@@ -60,9 +77,23 @@ import { toSignal } from '@angular/core/rxjs-interop';
       font-size: 1.4rem;
       margin-left: 20px;
     }
-    .team-name, .logo {
-      display: inline-block;
-      vertical-align: middle;
+    .team-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 10px;
+    }
+    .team-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .team-card .p-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
     }
     .logo img {
       max-width: 100px;
@@ -75,7 +106,14 @@ import { toSignal } from '@angular/core/rxjs-interop';
 export class TeamListComponent {
   private readonly teamService = inject(TeamService);
   private readonly router = inject(Router);
+  private readonly confirmationService = inject(ConfirmationService);
   teams = toSignal(this.teamService.myTeams(), { initialValue: null });
+  private readonly deletedTeamIds = signal<Set<number>>(new Set());
+  visibleTeams = computed(() => {
+    const teams = this.teams() ?? [];
+    const deletedIds = this.deletedTeamIds();
+    return teams.filter(team => !deletedIds.has(team.id));
+  });
 
   viewTeam(team: Equipe) {
     this.router.navigate(['/app/teams', team.id]);
@@ -83,5 +121,21 @@ export class TeamListComponent {
 
   createTeam() {
     this.router.navigate(['/app/teams/new']);
+  }
+
+  deleteTeam(team: Equipe, event: Event) {
+    event.stopPropagation();
+    this.confirmationService.confirm({
+      message: `Supprimer l'équipe « ${team.nom} » ?`,
+      header: 'Confirmation de suppression',
+      icon: 'pi pi-exclamation-triangle',
+      rejectLabel: 'Annuler',
+      acceptLabel: 'Supprimer',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: async () => {
+        await this.teamService.deleteTeam(team.id);
+        this.deletedTeamIds.update(ids => new Set(ids).add(team.id));
+      }
+    });
   }
 }

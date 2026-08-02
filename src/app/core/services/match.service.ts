@@ -22,13 +22,15 @@ export class MatchService {
   }
 
   public emptyMatch(): Match {
+    const manager = this.auth.getCurrentManager();
+    
     return {
       id:-1,
       createdAt: new Date().toDateString(),
       updatedAt: new Date().toDateString(),
       date: new Date().toDateString(),
       equipeId: 0,
-      managerId: this.auth.getCurrentManager()!.id,
+      managerId: manager ? manager.id : '',
       nomAdversaire:'Eux',
       saison: Saisons[0],
       score: { 

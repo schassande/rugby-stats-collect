@@ -176,24 +176,79 @@ export class EventEditComponent implements OnInit {
     }
     this.updateValidators();
   }
-  protected onEquipeChange(equipe: EquipeCode): void { this.event.update(ev => ev ? { ...ev, equipe } : undefined); }
-  protected onZoneTerrainChange(zoneTerrain: ZoneTerrain): void { this.event.update(ev => ev ? { ...ev, zoneTerrain } : undefined);}
-  protected onPositionLargeurChange(positionLargeur: PositionLargeur): void { this.event.update(ev => ev ? { ...ev, positionLargeur } : undefined);}
-  protected onComplementDisciplineChange(complementDiscipline: ComplementDiscipline): void { this.event.update(ev => ev ? { ...ev, complementDiscipline } : undefined); }
-  protected onFautesPenaliteChange(fautesPenalite: FautesPenalite): void { this.event.update(ev => ev ? { ...ev, fautesPenalite } : undefined); }
-  protected onFautesBrasCasseChange(fautesBrasCasse: FautesBrasCasse): void { this.event.update(ev => ev ? { ...ev, fautesBrasCasse } : undefined); }
-  protected onChoixDeJeuPenaliteChange(choixDeJeuPenalite: ChoixDeJeuPenalite): void { this.event.update(ev => ev ? { ...ev, choixDeJeuPenalite } : undefined); }
-  protected onChoixDeJeuBrasCasseChange(choixDeJeuBrasCasse: ChoixDeJeuBrasCasse): void { this.event.update(ev => ev ? { ...ev, choixDeJeuBrasCasse } : undefined); }
-  protected onResultatMeleeChange(resultatMelee: ResultatMelee): void { this.event.update(ev => ev ? { ...ev, resultatMelee } : undefined); }
-  protected onResultatMaulChange(resultatMaul: ResultatMaul): void { this.event.update(ev => ev ? { ...ev, resultatMaul } : undefined); }
-  protected onResultatRuckChange(resultRuck: ResultatRuck): void { this.event.update(ev => ev ? { ...ev, resultRuck } : undefined); }
-  protected onResultatToucheChange(resultatTouche: ResultatTouche): void { this.event.update(ev => ev ? { ...ev, resultatTouche } : undefined); }
-  protected onRecuperationChange(recuperation: Recuperation): void { this.event.update(ev => ev ? { ...ev, recuperation } : undefined); }
-  protected onResultatChange(resultat: Resultat): void { this.event.update(ev => ev ? { ...ev, resultat } : undefined); }
-  protected onZoneLanceChange(zoneLancee: ZoneLancee): void { this.event.update(ev => ev ? { ...ev, zoneLancee } : undefined); }
-  protected onNumeroJoueur1Change(numeroJoueur1: number | null): void { this.event.update(ev => ev ? { ...ev, numeroJoueur1: numeroJoueur1 ?? undefined } : undefined); }
-  protected onNumeroJoueur2Change(numeroJoueur2: number | null): void { this.event.update(ev => ev ? { ...ev, numeroJoueur2: numeroJoueur2 ?? undefined } : undefined); }
-  protected onDistanceJeuPiedChange(distanceJeuPied: number | null): void { this.event.update(ev => ev ? { ...ev, distanceJeuPied: distanceJeuPied ?? undefined } : undefined); }
+  protected onEquipeChange(equipe: EquipeCode): void { 
+    this.event.update(ev => ev ? { ...ev, equipe } : undefined); 
+    this.form.controls.equipe.setValue(equipe, { emitEvent : false});
+  }
+  protected onZoneTerrainChange(zoneTerrain: ZoneTerrain): void { 
+    this.event.update(ev => ev ? { ...ev, zoneTerrain } : undefined);
+    this.form.controls.zoneTerrain.setValue(zoneTerrain, { emitEvent : false});
+  }
+  protected onPositionLargeurChange(positionLargeur: PositionLargeur): void { 
+    this.event.update(ev => ev ? { ...ev, positionLargeur } : undefined);
+    this.form.controls.positionLargeur.setValue(positionLargeur, { emitEvent : false});
+  }
+  protected onComplementDisciplineChange(complementDiscipline: ComplementDiscipline): void { 
+    this.event.update(ev => ev ? { ...ev, complementDiscipline } : undefined); 
+    this.form.controls.complementDiscipline.setValue(complementDiscipline, { emitEvent : false});
+  }
+  protected onFautesPenaliteChange(fautesPenalite: FautesPenalite): void { 
+    this.event.update(ev => ev ? { ...ev, fautesPenalite } : undefined); 
+    this.form.controls.fautesPenalite.setValue(fautesPenalite, { emitEvent : false});
+  }
+  protected onFautesBrasCasseChange(fautesBrasCasse: FautesBrasCasse): void { 
+    this.event.update(ev => ev ? { ...ev, fautesBrasCasse } : undefined); 
+    this.form.controls.fautesBrasCasse.setValue(fautesBrasCasse, { emitEvent : false});
+  }
+  protected onChoixDeJeuPenaliteChange(choixDeJeuPenalite: ChoixDeJeuPenalite): void { 
+    this.event.update(ev => ev ? { ...ev, choixDeJeuPenalite } : undefined); 
+    this.form.controls.choixDeJeuPenalite.setValue(choixDeJeuPenalite, { emitEvent : false});
+  }
+  protected onChoixDeJeuBrasCasseChange(choixDeJeuBrasCasse: ChoixDeJeuBrasCasse): void { 
+    this.event.update(ev => ev ? { ...ev, choixDeJeuBrasCasse } : undefined); 
+    this.form.controls.choixDeJeuBrasCasse.setValue(choixDeJeuBrasCasse, { emitEvent : false});
+  }
+  protected onResultatMeleeChange(resultatMelee: ResultatMelee): void { 
+    this.event.update(ev => ev ? { ...ev, resultatMelee } : undefined); 
+    this.form.controls.resultatMelee.setValue(resultatMelee, { emitEvent : false});
+    console.log(this.event(), this.form.controls);
+  }
+  protected onResultatMaulChange(resultatMaul: ResultatMaul): void { 
+    this.event.update(ev => ev ? { ...ev, resultatMaul } : undefined); 
+    this.form.controls.resultatMaul.setValue(resultatMaul, { emitEvent : false});
+  }
+  protected onResultatRuckChange(resultRuck: ResultatRuck): void { 
+    this.event.update(ev => ev ? { ...ev, resultRuck } : undefined); 
+    this.form.controls.resultRuck.setValue(resultRuck, { emitEvent : false});
+  }
+  protected onResultatToucheChange(resultatTouche: ResultatTouche): void { 
+    this.event.update(ev => ev ? { ...ev, resultatTouche } : undefined);
+    this.form.controls.resultatTouche.setValue(resultatTouche, { emitEvent : false});
+  }
+  protected onRecuperationChange(recuperation: Recuperation): void { 
+    this.event.update(ev => ev ? { ...ev, recuperation } : undefined); 
+    this.form.controls.recuperation.setValue(recuperation, { emitEvent : false});
+  }
+  protected onResultatChange(resultat: Resultat): void { 
+    this.event.update(ev => ev ? { ...ev, resultat } : undefined); 
+    this.form.controls.resultat.setValue(resultat, { emitEvent : false});
+  }
+  protected onZoneLanceChange(zoneLancee: ZoneLancee): void { 
+    this.event.update(ev => ev ? { ...ev, zoneLancee } : undefined); 
+    this.form.controls.zoneLancee.setValue(zoneLancee, { emitEvent : false});
+  }
+  protected onNumeroJoueur1Change(numeroJoueur1: number | null): void { 
+    this.event.update(ev => ev ? { ...ev, numeroJoueur1: numeroJoueur1 ?? 0 } : undefined); 
+    this.form.controls.numeroJoueur1.setValue(numeroJoueur1, { emitEvent : false});
+  }
+  protected onNumeroJoueur2Change(numeroJoueur2: number | null): void { 
+    this.event.update(ev => ev ? { ...ev, numeroJoueur2: numeroJoueur2 ?? 0 } : undefined); 
+    this.form.controls.numeroJoueur2.setValue(numeroJoueur2, { emitEvent : false});
+  }
+  protected onDistanceJeuPiedChange(distanceJeuPied: number | null): void { 
+    this.event.update(ev => ev ? { ...ev, distanceJeuPied: distanceJeuPied ?? 0 } : undefined); 
+    this.form.controls.distanceJeuPied.setValue(distanceJeuPied, { emitEvent : false});
+  }
 
   public async persistEvent(createAnother: boolean): Promise<void> {
     const currentEvent = this.event();

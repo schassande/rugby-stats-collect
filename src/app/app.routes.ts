@@ -27,6 +27,10 @@ export const routes: Routes = [
         path: 'home',
         loadComponent: () => import('./features/teams/team-list.component').then((m) => m.TeamListComponent)
       },
+      {
+        path: 'sync',
+        loadComponent: () => import('./features/sync/sync-list.component').then((m) => m.SyncListComponent)
+      },
       { // Page de creation d'une équipe
         path: 'teams/new',
         loadComponent: () => import('./features/teams/team-edit.component').then((m) => m.TeamEditComponent)

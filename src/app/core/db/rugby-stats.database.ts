@@ -16,15 +16,14 @@ export class RugbyStatsDB extends Dexie {
 
   constructor() {
     super('RugbyStatsDB');
-    this.version(1).stores({
-      local_users: 'id',
-      managers: '++id',
-      equipes: '++id, saison',
-      matches: '++id, equipeId, date',
-      evenements: '++id, matchId',
-      sync_actions: '++id, status, createdAt',
+    this.version(2).stores({
+      local_users: 'id', // id=email
+      equipes: 'id', // id généré par l'application
+      matches: 'id, equipeId, saison', // id généré par l'application, index equipeId et saison
+      evenements: 'id, matchId, date', // id généré par l'application, index matchId
+      sync_actions: '++id, status', // id généré Dexie, index status
     });
-    //console.log('Local database started.');
+    console.log('Local database started.');
   }
 }
 

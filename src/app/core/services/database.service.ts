@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { db } from '../db/rugby-stats.database';
-import { Evenement, Match, Equipe, Manager, Saison, SyncAction, SyncObjectType, SyncActionType } from '../models/datamodel';
+import { Evenement, Match, Equipe, Manager, Saison, SyncAction, SyncObjectType, SyncActionType, SyncActionStatus } from '../models/datamodel';
 import { BehaviorSubject } from 'rxjs';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -9,18 +10,41 @@ import { BehaviorSubject } from 'rxjs';
 export class DatabaseService {
   private currentPendingSyncSubject = new BehaviorSubject<number>(0);
   currentPendingSync$ = this.currentPendingSyncSubject.asObservable();
+  private authService = inject(AuthService);
+
+  readonly equipePrefix = 1;
+  readonly matchPrefix = 2;
+  readonly evenementPrefix = 3;
 
   constructor() {
     this.calculPendingSyncs();
+  }
+
+  private textTo6Digits(value: string): number {
+    const normalized = value.trim().toLowerCase();
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < normalized.length; i++) {
+      hash ^= normalized.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    // Avalanche
+    hash ^= hash >>> 16;
+    hash = Math.imul(hash, 0x85ebca6b);
+    hash ^= hash >>> 13;
+    hash = Math.imul(hash, 0xc2b2ae35);
+    hash ^= hash >>> 16;
+    return Number.parseInt(((hash >>> 0) % 1_000_000).toString().padStart(6, '0'));
   }
 
   //=======================================================//
   // Events
   //=======================================================//
   async addEvent(event: Omit<Evenement, 'id'>): Promise<Evenement> {
-    const id = await db.evenements.add(event as any);
+    const id = event.matchId * 10000 * Math.floor(Math.random() * 10000)
+    const obj: Evenement = {...event, id}
+    await db.evenements.add(obj);
     this.addSync('Evenement', id, 'create');
-    return { ...event, id } as Evenement;
+    return obj;
   }
   async updateEvent(event: Evenement): Promise<void> {
     await db.evenements.put(event);
@@ -46,9 +70,11 @@ export class DatabaseService {
   // Matches
   //=======================================================//
   async addMatch(match: Omit<Match, 'id'>): Promise<Match> {
-    const id = await db.matches.add(match as any);
+    const id = match.equipeId * 10000 * Math.floor(Math.random() * 10000)
+    const obj: Match = {...match, id}
+    await db.matches.add(obj);
     this.addSync('Match', id, 'create');
-    return { ...match, id } as Match;
+    return obj;
   }
   async updateMatch(match: Match): Promise<void> {
     await db.matches.put(match);
@@ -80,10 +106,13 @@ export class DatabaseService {
   // Teams
   //=======================================================//
   async addTeam(team: Omit<Equipe, 'id'>): Promise<Equipe> {
-    const id = await db.equipes.add(team as any);
+    const id = this.textTo6Digits(this.authService.getCurrentManager()!.id) * 10000 
+      + Math.floor(Math.random() * 10000);
+    const obj: Equipe = {...team, id}
+    await db.equipes.add(obj);
     this.addSync('Equipe', id, 'create');
-    return { ...team, id } as Equipe;
-  }
+    return obj;
+ }
   async updateTeam(team: Equipe): Promise<void> {
     await db.equipes.put(team);
     this.addSync('Equipe', team.id, 'update');
@@ -150,10 +179,10 @@ export class DatabaseService {
       }
     }
 
+    // console.debug('Creation de la synchronisation pour ', objectType, objectId, actionType);
     // creation de l'action de synchronisation
     const d = new Date().toISOString();
-    const syncAction: SyncAction = {
-      id: 0,
+    const sansId: Omit<SyncAction, 'id'> = {
       createdAt: d,
       objectId,
       objectType,
@@ -163,17 +192,22 @@ export class DatabaseService {
     };
 
     // Stockage de l'action de synchronisation
-    const res = db.sync_actions.add(syncAction);
+    const id = await db.sync_actions.add(sansId as any);
     await this.calculPendingSyncs();
-    return res;
   }
 
   async updateSync(sync: SyncAction) {
+    sync.updatedAt = new Date().toISOString();
     await db.sync_actions.put(sync);
   }
 
   async getPendingSyncs(): Promise<SyncAction[]> {
-    return db.sync_actions.where('status').equals('pending').toArray();
+    return this.getSyncs('pending');
+  }
+  async getSyncs(status: SyncActionStatus|undefined): Promise<SyncAction[]> {
+    let q: any = db.sync_actions;
+    q = status ? q.where('status').equals(status) : q;
+    return q.toArray();
   }
 
   /** calcul le nombre de synchronisation a faire lors du demarrage */
@@ -209,16 +243,17 @@ export class DatabaseService {
       if (data.operations_queue) await db.sync_actions.bulkAdd(data.operations_queue);
     });
   }
-
-  async createAllSyncActionsFromDB() {
+   async createAllSyncActionsFromDB() {
     (await db.equipes.toArray()).forEach( equipe => {
       this.addSync('Equipe', equipe.id, 'create')
     });
+    /*
     (await db.matches.toArray()).forEach( match => {
       this.addSync('Match', match.id, 'create')
     });
     (await db.evenements.toArray()).forEach( evt => {
       this.addSync('Evenement', evt.id, 'create')
     });
+    */
   }
 }

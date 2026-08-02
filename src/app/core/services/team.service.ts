@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject, from, map, mergeMap, Observable, of } from 'rxjs';
 import { Equipe, Saison } from '@core/models/datamodel';
 import { DatabaseService } from '@core/services/database.service';
@@ -8,19 +8,11 @@ import { AuthService } from '@core/services/auth.service';
   providedIn: 'root'
 })
 export class TeamService {
-  private teamsSubject = new BehaviorSubject<Equipe[]>([]);
-  teams$ = this.teamsSubject.asObservable();
-  private currentTeamSubject = new BehaviorSubject<Equipe|undefined>(undefined);
-  currentTeam$ = this.currentTeamSubject.asObservable();
+  private readonly db =  inject(DatabaseService);
+  private readonly auth = inject(AuthService);
 
-  constructor(
-    private db: DatabaseService,
-    private auth: AuthService
-  ) {
-    this.loadTeams();
-    // TODO Chargement localement l'id de l'équipe courante
-    this.currentTeamSubject.next(undefined);
-  }
+  private currentTeamSubject = new BehaviorSubject<Equipe|undefined>(undefined);
+  public currentTeam$ = this.currentTeamSubject.asObservable();
 
   public myTeams(): Observable<Equipe[]> {
     return this.auth.currentManager$.pipe(
@@ -31,44 +23,30 @@ export class TeamService {
     );
   }
 
-  private async loadTeams() {
-    const user = this.auth.getCurrentManager();
-    if (!user) return;
-
-    const teams = await this.db.getTeamsByManager(user.id);
-    this.teamsSubject.next(teams);
-  }
-
   public async addTeam(team: Omit<Equipe, 'id' | 'createdAt' | 'updatedAt'>): Promise<Equipe> {
     const user = this.auth.getCurrentManager();
     if (!user) throw new Error('User not authenticated');
 
     const newTeam: Omit<Equipe, 'id'> = {
       ...team,
-      managerIds: [...team.managerIds, user.id],
+      managerIds:  this.unique([...team.managerIds, user.id]),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-
-    const created = await this.db.addTeam(newTeam);
-    this.teamsSubject.next([...this.teamsSubject.value, created]);
-    return created;
+    return await this.db.addTeam(newTeam);
   }
 
-  async updateTeam(team: Equipe): Promise<void> {
+  public async updateTeam(team: Equipe): Promise<void> {
     team.updatedAt = new Date().toISOString();
+    team.managerIds = this.unique(team.managerIds);
     await this.db.updateTeam(team);
-    const updated = this.teamsSubject.value.map(t => t.id === team.id ? team : t);
-    this.teamsSubject.next(updated);
   }
 
-  async deleteTeam(teamId: number): Promise<void> {
+  public async deleteTeam(teamId: number): Promise<void> {
     await this.db.deleteTeam(teamId);
-    const filtered = this.teamsSubject.value.filter(t => t.id !== teamId);
-    this.teamsSubject.next(filtered);
   }
 
-  async setCurrentTeam(team: Equipe|undefined){
+  public async setCurrentTeam(team: Equipe|undefined){
     this.currentTeamSubject.next(team);
     // TODO Stockage localement de l'id de l'équipe courante
   }
@@ -85,6 +63,9 @@ export class TeamService {
     }    
   }
   public emptyTeam(): Equipe {
-    return {id:-1, nom: '', createdAt: '', managerIds:[], updatedAt:''};
+    return {id:-1, nom: '', createdAt: '', managerIds:[], updatedAt:'', };
+  }
+  private unique(values: string[]): string[] {
+    return [...new Set(values)];
   }
 }

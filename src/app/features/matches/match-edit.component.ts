@@ -8,6 +8,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SelectModule } from 'primeng/select';
 import {
@@ -38,6 +39,7 @@ import { TeamService } from '@core/services/team.service';
     InputNumberModule,
     InputTextModule,
     MessageModule,
+    MultiSelectModule,
     RadioButtonModule,
     SelectModule,
   ],
@@ -70,7 +72,8 @@ import { TeamService } from '@core/services/team.service';
         </div>
         <div class="form-field">
           <label for="conditions">Conditions</label>
-          <p-select inputId="conditions" formControlName="conditions" [options]="conditionOptions"/>
+          <p-multiselect inputId="conditions" formControlName="conditions" [options]="conditionOptions"
+            placeholder="Sélectionner les conditions" [showClear]="true" />
         </div>
         <div class="form-field">
           <label for="debut">Début</label
@@ -147,12 +150,13 @@ import { TeamService } from '@core/services/team.service';
       }
       .form-field input,
       .form-field p-datepicker,
-      .form-field p-select {
+      .form-field p-select,
+      .form-field p-multiselect {
         width: 100%;
         min-width: 0;
       }
-      .form-field :is(input, p-datepicker, p-select),
-      .form-field :is(p-datepicker, p-select) ::ng-deep > * {
+      .form-field :is(input, p-datepicker, p-select, p-multiselect),
+      .form-field :is(p-datepicker, p-select, p-multiselect) ::ng-deep > * {
         max-width: 100%;
       }
       .score {
@@ -264,7 +268,6 @@ export class MatchEditComponent implements OnInit {
       if (!match) {
         throw new Error('Error technique de creation d un match');
       }
-
       // chargement du match dans le formulaire.
       this.form.patchValue({
         nomAdversaire: match.nomAdversaire,
@@ -319,7 +322,7 @@ export class MatchEditComponent implements OnInit {
       match.equipeId = +teamId;
       match.debut = this.matchService.getHHMM(new Date());
       
-      const saisonParam = this.route.snapshot.paramMap.get('saison');
+      const saisonParam = this.route.snapshot.queryParamMap.get('saison');
       if (saisonParam) {
         match.saison = saisonParam as Saison;
       } else {

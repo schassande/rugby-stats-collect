@@ -163,7 +163,7 @@ export class App implements OnInit {
 
   user = toSignal(this.auth.currentManager$);
   equipeSelectionnee = toSignal(this.teamService.currentTeam$);
-  matchSelectionne = toSignal(this.teamService.currentTeam$);
+  matchSelectionne = toSignal(this.matchService.currentMatch$);
   pendingSync = toSignal(this.databaseService.currentPendingSync$)
 
   voirMatchSelectionne() {
@@ -171,7 +171,6 @@ export class App implements OnInit {
   }
   voirEquipeSelectionnee() {
     this.router.navigate(['/app/team', this.teamService.getCurrentTeam()!.id])
-
   }
 
   async logout() {
