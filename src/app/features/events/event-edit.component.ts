@@ -9,7 +9,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { OptionSelectButtonComponent } from '@shared/components/option-select-button.component';
 import { DatabaseService } from '@core/services/database.service';
 import { EvenementService } from '@core/services/evenement.service';
-import { configsTypeEvenemnt, ChoixDeJeuBrasCasse, ChoixDeJeuPenalite, ComplementDiscipline, EquipeCode, Evenement, FautesBrasCasse, FautesPenalite, Match, NatureEvenement, Periode, PositionLargeur, Resultat, ResultatMelee, ResultatMaul, ResultatRuck, ResultatTouche, Recuperation, TypeEvenement, ZoneLancee, ZoneTerrain, ConfigTypeEvenement, DEFAUT_TYPE_EVENEMENT } from '@core/models/datamodel';
+import { configsTypeEvenemnt, ChoixDeJeuBrasCasse, ChoixDeJeuPenalite, ComplementDiscipline, EquipeCode, Evenement, FautesBrasCasse, FautesPenalite, Match, NatureEvenement, Periode, PositionLargeur, Resultat, ResultatMelee, ResultatMaul, ResultatRuck, ResultatTouche, Recuperation, TypeEvenement, ZoneLancee, ZoneTerrain, ConfigTypeEvenement, DEFAUT_TYPE_EVENEMENT, ResultatTransformation } from '@core/models/datamodel';
 import { MatchService } from '@core/services/match.service';
 import { ButtonModule } from 'primeng/button';
 import { EVENT_NATURE_OPTIONS, FAUTES_BRAS_CASSE_OPTIONS, FAUTES_PENALITE_OPTIONS, CHOIX_DE_JEU_PENALITE_OPTIONS, CHOIX_DE_JEU_BRAS_CASSE_OPTIONS, COMPLEMENT_DISCIPLINE_OPTIONS, Option, POSITION_LARGEUR_OPTIONS, RECUPERATION_OPTIONS, RESULTAT_OPTIONS, RESULTAT_MELEE_OPTIONS, RESULTAT_MAUL_OPTIONS, RESULTAT_RUCK_OPTIONS, RESULTAT_TOUCHE_OPTIONS, ZONE_TERRAIN_OPTIONS } from './event-edit.options';
@@ -86,6 +86,7 @@ export class EventEditComponent implements OnInit {
     resultatMaul: [undefined as ResultatMaul | undefined],
     resultRuck: [undefined as ResultatRuck | undefined],
     resultatTouche: [undefined as ResultatTouche | undefined],
+    resultatTransformation: [undefined as ResultatTransformation | undefined],
     recuperation: [undefined as Recuperation | undefined],
     resultat: [undefined as Resultat | undefined],
   });
@@ -126,6 +127,7 @@ export class EventEditComponent implements OnInit {
         resultatMaul: this.event()!.resultatMaul,
         resultRuck: this.event()!.resultRuck,
         resultatTouche: this.event()!.resultatTouche,
+        resultatTransformation: this.event()!.resultatTransformation,
         recuperation: this.event()!.recuperation,
         resultat: this.event()!.resultat,
         zoneLancee: this.event()!.zoneLancee,
@@ -162,18 +164,24 @@ export class EventEditComponent implements OnInit {
   protected onTypeChange(type: TypeEvenement): void { 
     this.form.controls.type.setValue(type);
     this.event.update(ev => ev ? { ...ev, type } : undefined);
-    if (this.config()?.resultat && !this.event()!.resultat) {
+    if (this.config()?.resultat && !this.event()!.resultat) { 
+      // Ajout d'une valeur par defaut
        this.form.patchValue({ resultat: 'REUSSITE' });
       this.event()!.resultat = 'REUSSITE';
     }
     if (this.config()?.equipe && !this.event()!.equipe) {
+      // Ajout d'une valeur par defaut
        this.form.patchValue({ equipe: 'NOUS' });
-      this.event()!.equipe = 'NOUS';
+     this.event()!.equipe = 'NOUS';
     }
     if (this.config()?.complementDiscipline && !this.event()!.complementDiscipline) {
-       this.form.patchValue({ complementDiscipline: 'AUCUN' });
+      // Ajout d'une valeur par defaut
+      this.form.patchValue({ complementDiscipline: 'AUCUN' });
       this.event()!.complementDiscipline = 'AUCUN';
     }
+    // Lors d'un essai le resultat de la transformation doit être demandé
+    this.config()!.resultatTransformation = this.event()!.type === 'ESSAI';
+
     this.updateValidators();
   }
   protected onEquipeChange(equipe: EquipeCode): void { 
@@ -225,6 +233,11 @@ export class EventEditComponent implements OnInit {
     this.event.update(ev => ev ? { ...ev, resultatTouche } : undefined);
     this.form.controls.resultatTouche.setValue(resultatTouche, { emitEvent : false});
   }
+  protected onResultatTransformationChange(resultatTransformation: Resultat): void { 
+    this.event.update(ev => ev ? { ...ev, resultatTransformation } : undefined);
+    this.form.controls.resultatTransformation.setValue(resultatTransformation, { emitEvent : false});
+  }
+
   protected onRecuperationChange(recuperation: Recuperation): void { 
     this.event.update(ev => ev ? { ...ev, recuperation } : undefined); 
     this.form.controls.recuperation.setValue(recuperation, { emitEvent : false});
@@ -373,6 +386,7 @@ export class EventEditComponent implements OnInit {
     this.updateControl(this.form.controls.resultatMaul, this.config()?.resultatMaul);
     this.updateControl(this.form.controls.resultatMelee, this.config()?.resultatMelee);
     this.updateControl(this.form.controls.resultatTouche, this.config()?.resultatTouche);
+    this.updateControl(this.form.controls.resultatTransformation, this.config()?.resultatTransformation);
     this.updateControl(this.form.controls.zoneLancee, this.config()?.zoneLancee);
 
     this.updateControl(this.form.controls.complementDiscipline, this.config()?.complementDiscipline);

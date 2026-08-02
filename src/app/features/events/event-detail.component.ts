@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <section>
-      <h2>Administration des Événements</h2>
+      <h2>TODO</h2>
     </section>
   `
 })

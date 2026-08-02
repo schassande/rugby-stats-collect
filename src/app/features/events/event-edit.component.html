@@ -64,6 +64,10 @@
         <h3>Résultat touche @if (form.controls.resultatTouche.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <app-option-select-button [options]="resultatToucheOptions" [value]="form.controls.resultatTouche.value ?? null" (valueChange)="onResultatToucheChange($any($event))" />
       }
+      @if (config()?.resultatTransformation) { 
+        <h3>Résultat transformation @if (form.controls.resultatTransformation.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
+        <app-option-select-button [options]="resultatOptions" [value]="form.controls.resultatTransformation.value ?? null" (valueChange)="onResultatTransformationChange($any($event))" />
+      }
       @if (config()?.recuperation) { 
         <h3>Récupération @if (form.controls.recuperation.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <app-option-select-button [options]="recuperationOptions" [value]="form.controls.recuperation.value ?? null" (valueChange)="onRecuperationChange($any($event))" />
@@ -229,6 +233,7 @@
       <div>resultatMaul = {{ form.controls.resultatMaul.valid }}</div>
       <div>resultMelee = {{ form.controls.resultatMelee.valid }}</div>
       <div>resultTouche = {{ form.controls.resultatTouche.valid }}</div>
+      <div>resultTransformation = {{ form.controls.resultatTransformation.valid }}</div>
       <div>type = {{ form.controls.type.valid }}</div>
       <div>zoneTerrain = {{ form.controls.zoneTerrain.valid }}</div>
       -->

@@ -94,6 +94,7 @@ export interface Evenement {
   resultatMelee?: ResultatMelee;
   resultatMaul?: ResultatMaul;
   resultatTouche?: ResultatTouche;
+  resultatTransformation?: Resultat;
   resultRuck?: ResultatRuck;
   recuperation?: Recuperation;
   resultat?: Resultat;
@@ -110,7 +111,7 @@ export type TypeEvenement =
   | FaitDeJeuType
   | Remplacement;
 export type TempsType = 'DEBUT_MATCH' | 'FIN_1ERE_MITEMPS' | 'DEBUT_2ND_MITEMPS' | 'FIN_2ND_MITEMPS' | 'PROLONGATION' | 'FIN_MATCH';
-export type ScoreType = 'ESSAI' | 'DROP' | 'TRANSFORMATION';
+export type ScoreType = 'ESSAI' | 'DROP';
 export type ConqueteType = 'TOUCHE' | 'MELEE' | 'MAUL' | 'CHANDELLE' | 'RENVOI' ;
 export type DisciplineType = 'PENALITE' | 'BRAS_CASSE';
 export type ErreurType = 'EN_AVANT' | 'COUP_EN_TOUCHE_DIRECT' | 'SORTIE_TOUCHE';
@@ -177,6 +178,7 @@ export type ResultatMelee = 'GAGNEE' | 'PENALISEE' | 'GAIN_PENALITE' | 'SUBIE' |
 export type ResultatMaul = 'AVANCEE_FAIBLE' | 'AVANCEE_FORTE' | 'PENALISEE' | 'GAIN_PENALITE' | 'ESSAI';
 export type ResultatRuck = 'GAGNE' | 'CONSERVE' | 'PERDU';
 export type ResultatTouche = 'GAGNEE' | 'PERDUE' | 'CONTRE' | 'PENALISEE' | 'BRAS_CASSE';
+export type ResultatTransformation = 'REUSSITE' | 'ECHEC';
 export type Recuperation = 'GAGNE' | 'PERDU';
 export type Resultat = 'REUSSITE' | 'ECHEC';
 export type ZoneLancee = 1 | 2 | 3;
@@ -206,6 +208,7 @@ export class ConfigTypeEvenement {
   resultatMaul: boolean = false;
   resultatRuck: boolean = false;
   resultatTouche: boolean = false;
+  resultatTransformation: boolean = false;
   recuperation: boolean = false;
   resultat: boolean = false;
   noIcon = false;
@@ -249,8 +252,6 @@ export const configsTypeEvenemnt : ConfigTypeEvenement[] = [
   new ConfigTypeEvenement('TEMPS', 'PROLONGATION', 'Prolongation', ),
 
   new ConfigTypeEvenement('SCORE', 'ESSAI', 'Essai', )._numeroJoueur1()._positionLargeur()._equipe()._periode(),
-  new ConfigTypeEvenement('SCORE', 'TRANSFORMATION', 'Transfo')._numeroJoueur1()._positionLargeur()._periode()
-    ._distanceJeuPied()._resultat()._equipe()._periode(),
   new ConfigTypeEvenement('SCORE', 'DROP', 'Drop')._numeroJoueur1()._positionLargeur()._distanceJeuPied()._equipe()
     ._zoneTerrain()._resultat()._periode(),
 

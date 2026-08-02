@@ -70,14 +70,16 @@ export class MatchService {
 
     let points = 0;
     switch(evt.type) {
-      case 'ESSAI' : points = 5;
+      case 'ESSAI' : 
+        if (evt.resultatTransformation && evt.resultatTransformation === 'REUSSITE') {
+          points = 7;
+        } else {
+          points = 5;
+        }
         break;
       case 'PENALITE' :
       case 'DROP' : 
-        points = 3;
-        break;
-      case 'TRANSFORMATION' : 
-        points = 2;
+        if (evt.resultat) points = 3;
         break;
       default: 
         console.error("Impossible d appliquer un score: l'evenement de nature score n'est pas géré", evt);
@@ -87,10 +89,12 @@ export class MatchService {
       console.error("Impossible d appliquer un score: l'evenement n'a pas d'équipe", evt);
       return;
     }
-    if (evt.equipe === 'NOUS') {
-      match.score.nous += points;
-    } else if (evt.equipe === 'ADV') {
-      match.score.adversaire += points;
+    if (points > 0) {
+      if (evt.equipe === 'NOUS') {
+        match.score.nous += points;
+      } else if (evt.equipe === 'ADV') {
+        match.score.adversaire += points;
+      }
     }
   }
 }
