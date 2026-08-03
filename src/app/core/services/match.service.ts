@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { Evenement, Match, Saisons } from '@core/models/datamodel';
+import { Duree, Evenement, Match, Saisons } from '@core/models/datamodel';
 import { DatabaseService } from '@core/services/database.service';
 import { AuthService } from './auth.service';
 
@@ -25,18 +25,14 @@ export class MatchService {
     const manager = this.auth.getCurrentManager();
     
     return {
-      id:-1,
+      id:'',
       createdAt: new Date().toDateString(),
       updatedAt: new Date().toDateString(),
       date: new Date().toDateString(),
-      equipeId: 0,
+      equipeId: '',
       managerId: manager ? manager.id : '',
       nomAdversaire:'Eux',
-      saison: Saisons[0],
-      score: { 
-        adversaire:0,
-        nous: 0
-      }
+      saison: Saisons[0]
     };
   }
 
@@ -46,50 +42,47 @@ export class MatchService {
 
     return `${hours}:${minutes}`;
   }
+  public calculerDuree(debut: string, fin: string): Duree {
+    const debutPeriode = new Date(debut);
+    const finPeriode = new Date(fin);
+    const dureeEnSecondes = Math.floor((finPeriode.getTime() - debutPeriode.getTime()) / 1000);
+    return { minute: Math.floor(dureeEnSecondes / 60), seconde: dureeEnSecondes % 60 };
+  }
+  public ajouterDurations(d1: Duree, d2: Duree): Duree {
+    const somSec = d1.seconde + d2.seconde;
+    return { minute: d1.minute + d2.minute + somSec/60, seconde: somSec % 60}
+  }
 
-  public async calculerScore(matchId: number): Promise<void> {
+  public async calculerScore(matchId: string): Promise<void> {
     const match = await this.databaseService.getMatch(matchId);
     if (!match) return Promise.resolve();
     const events = await this.databaseService.getEventsByMatch(matchId);
-    match.score.nous = 0;
-    match.score.adversaire = 0;
-    events.filter(evt => evt.nature === 'SCORE')
-      .forEach(evt => this.appliquerEvenement(evt, match));
+    match.score = {nous: 0, adversaire: 0};
+    events.forEach(evt => this.appliquerScoreEvenement(evt, match));
     return this.databaseService.updateMatch(match);
   }
 
-  private appliquerEvenement(evt: Evenement, match: Match) {
-    if (evt.nature !== 'SCORE') return;
-    if (evt.type !== 'ESSAI') {
-      if (!evt.resultat) {
-        console.error("Impossible d appliquer un score: l'evenement n'a pas de resultat", evt);
-        return;
-      }
-      if (evt.resultat !== 'REUSSITE') return;
-    }
-
+  private appliquerScoreEvenement(evt: Evenement, match: Match) {
     let points = 0;
-    switch(evt.type) {
-      case 'ESSAI' : 
-        if (evt.resultatTransformation && evt.resultatTransformation === 'REUSSITE') {
-          points = 7;
-        } else {
-          points = 5;
-        }
-        break;
-      case 'PENALITE' :
-      case 'DROP' : 
-        if (evt.resultat) points = 3;
-        break;
-      default: 
-        console.error("Impossible d appliquer un score: l'evenement de nature score n'est pas géré", evt);
-        return;
-    }
-    if (!evt.equipe) {
-      console.error("Impossible d appliquer un score: l'evenement n'a pas d'équipe", evt);
-      return;
+    if (evt.type === 'ESSAI') { 
+      if (evt.resultatTransformation && evt.resultatTransformation === 'REUSSITE') {
+        points = 7;
+      } else {
+        points = 5;
+      }
+    } else if (evt.type === 'PENALITE' && evt.choixDeJeuPenalite === 'POTEAU' && evt.resultat === 'REUSSITE') {
+        points = 3;
+    } else if (evt.type === 'DROP' && evt.resultat === 'REUSSITE') {
+        points = 3;
     }
     if (points > 0) {
+      if (!evt.equipe) {
+        console.error("Impossible d appliquer un score: l'evenement n'a pas d'équipe", evt);
+        return;
+      }
+      if (!match.score) {
+        match.score = { nous: 0, adversaire: 0 };
+      }
       if (evt.equipe === 'NOUS') {
         match.score.nous += points;
       } else if (evt.equipe === 'ADV') {

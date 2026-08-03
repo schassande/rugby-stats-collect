@@ -42,7 +42,7 @@ export class TeamService {
     await this.db.updateTeam(team);
   }
 
-  public async deleteTeam(teamId: number): Promise<void> {
+  public async deleteTeam(teamId: string): Promise<void> {
     await this.db.deleteTeam(teamId);
   }
 
@@ -63,7 +63,7 @@ export class TeamService {
     }    
   }
   public emptyTeam(): Equipe {
-    return {id:-1, nom: '', createdAt: '', managerIds:[], updatedAt:'', };
+    return {id:'', nom: '', createdAt: '', managerIds:[], updatedAt:'', };
   }
   private unique(values: string[]): string[] {
     return [...new Set(values)];

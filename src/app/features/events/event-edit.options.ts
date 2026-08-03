@@ -158,7 +158,6 @@ export const RESULTAT_OPTIONS: Option<Resultat>[] = [
   ].map(([value, label, icon]) => ({ value, label, icon })) as Option<Resultat>[];
 
 export const EVENT_NATURE_OPTIONS : Option<NatureEvenement>[] = [
-  { nature: 'TEMPS',        label: 'Temps'          },
   { nature: 'SCORE',        label: 'Score'          },
   { nature: 'CONQUETE',     label: 'Conquête'       },
   { nature: 'FAIT_DE_JEU',  label: 'Fait de jeu'    },

@@ -172,11 +172,11 @@ export class TeamEditComponent implements OnInit {
     const teamId = this.route.snapshot.paramMap.get('teamId');
     if (teamId) {
       this.isEdit = true;
-      this.loadTeam(+teamId);
+      this.loadTeam(teamId);
     }
   }
 
-  private async loadTeam(teamId: number) {
+  private async loadTeam(teamId: string) {
     this.team.set(await this.db.getTeam(teamId));
     const t = this.team();
     if (t) {
@@ -188,7 +188,7 @@ export class TeamEditComponent implements OnInit {
     if (!this.form.valid) return;
 
     try {
-      let id: number;
+      let id: string;
       const t:Equipe = { ...this.team(), ...this.form.value };
       delete (t as any).managerEmail; // delete form field
       this.team.set(t);

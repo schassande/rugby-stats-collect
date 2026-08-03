@@ -4,6 +4,8 @@ import { Evenement, Match, Equipe, Manager, Saison, SyncAction, SyncObjectType, 
 import { BehaviorSubject } from 'rxjs';
 import { AuthService } from './auth.service';
 
+export const randomSize:number = 1000000;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -40,7 +42,7 @@ export class DatabaseService {
   // Events
   //=======================================================//
   async addEvent(event: Omit<Evenement, 'id'>): Promise<Evenement> {
-    const id = event.matchId * 10000 * Math.floor(Math.random() * 10000)
+    const id = event.matchId + '-E' + Math.floor(Math.random() * randomSize)
     const obj: Evenement = {...event, id}
     await db.evenements.add(obj);
     this.addSync('Evenement', id, 'create');
@@ -50,15 +52,15 @@ export class DatabaseService {
     await db.evenements.put(event);
     this.addSync('Evenement', event.id, 'update');
   }
-  async deleteEvent(eventId: number): Promise<void> {
+  async deleteEvent(eventId: string): Promise<void> {
     await db.evenements.delete(eventId);
     this.addSync('Evenement', eventId, 'delete');
   }
-  async getEventsByMatch(matchId: number): Promise<Evenement[]> {
+  async getEventsByMatch(matchId: string): Promise<Evenement[]> {
     const events = await db.evenements.where('matchId').equals(matchId).toArray();
     return events.sort((a, b) => b.instant.localeCompare(a.instant));
   }
-  async getEvent(eventId: number): Promise<Evenement | undefined> {
+  async getEvent(eventId: string): Promise<Evenement | undefined> {
     return db.evenements.get(eventId);
   }
   async importEvents(evenements: Evenement[]) {
@@ -70,7 +72,7 @@ export class DatabaseService {
   // Matches
   //=======================================================//
   async addMatch(match: Omit<Match, 'id'>): Promise<Match> {
-    const id = match.equipeId * 10000 * Math.floor(Math.random() * 10000)
+    const id = match.equipeId + '-M' + Math.floor(Math.random() * randomSize);
     const obj: Match = {...match, id}
     await db.matches.add(obj);
     this.addSync('Match', id, 'create');
@@ -80,21 +82,30 @@ export class DatabaseService {
     await db.matches.put(match);
     this.addSync('Match', match.id, 'update');
   }
-  async deleteMatch(matchId: number): Promise<void> {
+  async deleteMatch(matchId: string): Promise<void> {
+    const events = await this.getEventsByMatch(matchId);
+    if (events.length > 0) {
+      console.debug('Suppression de '+events.length+' evenements du match '+ matchId +' avant la suppression du match lui meme')
+      for (const event of events) {
+        await this.deleteEvent(event.id);
+      }
+    } else {
+      console.debug('Suppression direct du match '+ matchId);
+    }
     await db.matches.delete(matchId);
     this.addSync('Match', matchId, 'delete');
   }
-  async getMatchesByTeam(teamId: number): Promise<Match[]> {
+  async getMatchesByTeam(teamId: string): Promise<Match[]> {
     return db.matches.where('equipeId').equals(teamId).toArray();
   }
-  async getMatchesByTeamNSeason(teamId: number, season: Saison): Promise<Match[]> {
+  async getMatchesByTeamNSeason(teamId: string, season: Saison): Promise<Match[]> {
     return db.matches
       .where('equipeId')
       .equals(teamId)
       .filter(match => match.saison === season)
       .toArray();
   }
-  async getMatch(matchId: number): Promise<Match | undefined> {
+  async getMatch(matchId: string): Promise<Match | undefined> {
     return db.matches.get(matchId);
   }
   async importMatches(matchs: Match[]) {
@@ -106,8 +117,7 @@ export class DatabaseService {
   // Teams
   //=======================================================//
   async addTeam(team: Omit<Equipe, 'id'>): Promise<Equipe> {
-    const id = this.textTo6Digits(this.authService.getCurrentManager()!.id) * 10000 
-      + Math.floor(Math.random() * 10000);
+    const id = this.textTo6Digits(this.authService.getCurrentManager()!.id) + '-T' +Math.floor(Math.random() * randomSize);
     const obj: Equipe = {...team, id}
     await db.equipes.add(obj);
     this.addSync('Equipe', id, 'create');
@@ -117,7 +127,7 @@ export class DatabaseService {
     await db.equipes.put(team);
     this.addSync('Equipe', team.id, 'update');
   }
-  async deleteTeam(teamId: number): Promise<void> {
+  async deleteTeam(teamId: string): Promise<void> {
     await db.equipes.delete(teamId);
     this.addSync('Equipe', teamId, 'delete');
   }
@@ -126,7 +136,7 @@ export class DatabaseService {
       .filter(team => team.managerIds.includes(managerId))
       .toArray();
   }
-  async getTeam(teamId: number): Promise<Equipe | undefined> {
+  async getTeam(teamId: string): Promise<Equipe | undefined> {
     return db.equipes.get(teamId);
   }
   async importTeams(equipes: Equipe[]) {
@@ -148,7 +158,7 @@ export class DatabaseService {
   //=======================================================//
   // ActionSync
   //=======================================================//
-  private async addSync(objectType: SyncObjectType, objectId: number, actionType: SyncActionType): Promise<void> {
+  private async addSync(objectType: SyncObjectType, objectId: string, actionType: SyncActionType): Promise<void> {
     // Verification qu'il est necessaire de creer une nouvelle action de synchronisation
     const previousPendingActions = (await this.getPendingSyncs())
       .filter(sync => sync.objectType === objectType 
@@ -201,6 +211,17 @@ export class DatabaseService {
     await db.sync_actions.put(sync);
   }
 
+  async deleteSync(syncId: number): Promise<void> {
+    await db.sync_actions.delete(syncId);
+    await this.calculPendingSyncs();
+  }
+
+  async deleteSyncsByStatus(status: SyncActionStatus): Promise<void> {
+    const syncs = await this.getSyncs(status);
+    await db.sync_actions.bulkDelete(syncs.map(sync => sync.id));
+    await this.calculPendingSyncs();
+  }
+
   async getPendingSyncs(): Promise<SyncAction[]> {
     return this.getSyncs('pending');
   }
@@ -242,18 +263,5 @@ export class DatabaseService {
       if (data.evenements) await db.evenements.bulkAdd(data.evenements);
       if (data.operations_queue) await db.sync_actions.bulkAdd(data.operations_queue);
     });
-  }
-   async createAllSyncActionsFromDB() {
-    (await db.equipes.toArray()).forEach( equipe => {
-      this.addSync('Equipe', equipe.id, 'create')
-    });
-    /*
-    (await db.matches.toArray()).forEach( match => {
-      this.addSync('Match', match.id, 'create')
-    });
-    (await db.evenements.toArray()).forEach( evt => {
-      this.addSync('Evenement', evt.id, 'create')
-    });
-    */
   }
 }

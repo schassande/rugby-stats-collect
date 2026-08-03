@@ -22,6 +22,26 @@ export class AuthService {
   private currentManagerSubject = new BehaviorSubject<Manager | null>(null);
   public currentManager$ = this.currentManagerSubject.asObservable();
 
+
+  public async checkFirebaseUserConnected(): Promise<void> {
+    const firebaseUser = auth?.currentUser;
+    if (!firebaseUser) {
+      console.error('Aucun utilisateur Firebase authentifié.')
+      throw new Error('Aucun utilisateur Firebase authentifié.');
+    }
+
+    try {
+      await firebaseUser.getIdToken(true);
+    } catch (error) {
+      console.error('Le token Firebase n est plus valide.', error);
+      try {
+        await auth.currentUser!.reload();
+        await firebaseUser.getIdToken(true);
+      } catch(err) {
+        throw new Error('Le token Firebase n est plus valide et il n est pas possible de le rafraichir', { cause: err });
+      }
+    }
+  }
   /**
    * Enregistrement de l'utilisateur par son email.
    * @param email 

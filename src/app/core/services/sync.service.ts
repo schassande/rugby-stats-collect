@@ -3,7 +3,7 @@ import { BehaviorSubject } from 'rxjs';
 import { Equipe, Evenement, Match, Saisons, SyncAction, SyncObjectType } from '@core/models/datamodel';
 import { DatabaseService } from '@core/services/database.service';
 import { AuthService } from './auth.service';
-import { db as firestoreDatabase } from '../config/firebase.config';
+import { auth, db as firestoreDatabase } from '../config/firebase.config';
 import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 
 @Injectable({
@@ -16,6 +16,8 @@ export class SyncService {
   private static readonly COLLECTIION_MATCH: SyncObjectType = 'Match';
   private static readonly COLLECTIION_EVENEMENT: SyncObjectType = 'Evenement';
 
+
+
   /**
    * Synchronisation vers Firestore de toutes les données pending dans la base local.
    */
@@ -24,9 +26,16 @@ export class SyncService {
     await this.uploadAll(syncs);
   }
   public async uploadAll(syncs: SyncAction[]) {
-    syncs.forEach(async sync => this.upload(sync));
+    // await this.authService.checkFirebaseUserConnected();
+    await Promise.all(syncs.map((sync) => this.uploadChecked(sync)));
   }
   public async upload(sync: SyncAction) {
+    await this.authService.checkFirebaseUserConnected();
+    await this.uploadChecked(sync);
+  }
+  private async uploadChecked(sync: SyncAction) {
+    if (sync.status === 'synced') return;
+
     // recuperation de l'objet dans la base locale
     let obj;
     if (sync.actionType !== 'delete') {
@@ -48,6 +57,7 @@ export class SyncService {
         return;
       }
     }
+    console.debug('uploadChecked: ', sync, obj);
     try {
       switch(sync.actionType) {
         case 'create' : 

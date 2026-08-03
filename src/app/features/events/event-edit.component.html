@@ -7,17 +7,12 @@
     <form [formGroup]="form" class="evenement-form">
       <h3>Quand</h3>
       <span class="periode-options">
-        <span>{{event()?.instant | date:'HH:mm:SS' }}</span>
-        @if (config()?.equipe) {
-          <span class="periode-option">
-            <p-radiobutton formControlName="periode" name="periode" inputId="periode-1" [value]="1" (onClick)="onPeriodeChange(1)" />
-            <label for="periode-1">1ère période</label>
-          </span>
-          <span class="periode-option">
-            <p-radiobutton formControlName="periode" name="periode" inputId="periode-2" [value]="2" (onClick)="onPeriodeChange(2)" />
-            <label for="periode-2">2nd période</label>
-          </span>
+        @if (event()?.periode === 1) {
+          <span>1ère période, </span>
+        } @else {
+          <span>2nd période, </span>
         }
+        <span>{{event()?.minute}}mim{{event()?.seconde}}s ({{event()?.instant | date:'HH:mm:SS' }}) </span>
       </span>
 
       <h3>Nature de l'événement <span class="required-field">*</span></h3>
@@ -34,6 +29,9 @@
       }
       @if (config()?.equipe) {
         <h3>Equipe @if (form.controls.equipe.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
+        @if (form.controls.type.value == 'PENALITE' || form.controls.type.value == 'BRAS_CASSE') {
+          <p>Selectionner l'équipe qui n'a pas fait la faute.</p>
+        }
         <div class="equipe-options">
           <span class="equipe-option">
             <p-radiobutton formControlName="equipe" name="equipe" inputId="equipe-nous"
@@ -71,11 +69,6 @@
       @if (config()?.recuperation) { 
         <h3>Récupération @if (form.controls.recuperation.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
         <app-option-select-button [options]="recuperationOptions" [value]="form.controls.recuperation.value ?? null" (valueChange)="onRecuperationChange($any($event))" />
-      }
-      @if (config()?.resultat && (event()!.type != 'PENALITE' || event()!.choixDeJeuPenalite == 'POTEAU')) { 
-        <h3>Résultat @if (form.controls.resultat.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
-        <app-option-select-button [options]="resultatOptions" [value]="form.controls.resultat.value ?? null" (valueChange)="onResultatChange($any($event))" />
-        
       }
       @if (config()?.zoneTerrain) {
         <h3>Zone de terrain @if (form.controls.zoneTerrain.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
@@ -155,6 +148,10 @@
           [options]="choixDeJeuBrasCasseOptions"
           [value]="form.controls.choixDeJeuBrasCasse.value ?? null"
           (valueChange)="onChoixDeJeuBrasCasseChange($any($event))" />
+      }
+      @if (config()?.resultat && (event()!.type != 'PENALITE' || event()!.choixDeJeuPenalite == 'POTEAU')) { 
+        <h3>Résultat @if (form.controls.resultat.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>
+        <app-option-select-button [options]="resultatOptions" [value]="form.controls.resultat.value ?? null" (valueChange)="onResultatChange($any($event))" />        
       }
       @if (config()?.zoneLancee) {
         <h3>Zone de lancée @if (form.controls.zoneLancee.hasValidator(requiredValidator)) {<span class="required-field">*</span>}</h3>

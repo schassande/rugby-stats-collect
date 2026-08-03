@@ -1,7 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, from, map, mergeMap, Observable, of } from 'rxjs';
-import { ConfigTypeEvenement, Equipe, Evenement, Match, Periode, Saisons } from '@core/models/datamodel';
-import { DatabaseService } from '@core/services/database.service';
+import { ConfigTypeEvenement, Duree, Evenement, Match, Periode } from '@core/models/datamodel';
 import { AuthService } from './auth.service';
 import { MatchService } from './match.service';
 
@@ -10,15 +8,16 @@ import { MatchService } from './match.service';
 })
 export class EvenementService {
   private readonly auth = inject(AuthService);
+  private readonly matchService = inject(MatchService);
   public periodeCourante: Periode = 1;
 
   public emptyEvenement(): Evenement {
     const d = new Date();
     return {
-      id:-1,
+      id:'',
       createdAt: new Date().toDateString(),
       instant: d.toISOString(),
-      matchId: 0,
+      matchId: '',
       periode: this.periodeCourante,
       nature: 'SCORE',
       type:'ESSAI',
@@ -27,13 +26,18 @@ export class EvenementService {
   }
 
   public calculerEvenementHeureMinute(evenement: Evenement, match: Match) {
-    const debutMatch = new Date(match.debut!);
-    const evtDateTime = new Date(evenement.instant);
-    const dureeEnSecondes = Math.floor((evtDateTime.getTime() - debutMatch.getTime()) / 1000);
-    const secondesEcoulees = dureeEnSecondes - (evenement.periode === 2 ? 15 * 60 : 0);
-
-    evenement.minute = Math.floor(secondesEcoulees / 60);
-    evenement.seconde = secondesEcoulees % 60;
+    let duree: Duree|undefined;
+    if (evenement.periode === 1) {
+      duree = this.matchService.calculerDuree(match.temps!.debutMatch!, evenement.instant);
+    } else if (evenement.periode === 2) {
+      duree = this.matchService.ajouterDurations(
+        match.temps!.duree1ereMiTemps!,
+        this.matchService.calculerDuree(match.temps!.debut2iemeMiTemps!, evenement.instant));
+    }
+    if (duree) {
+      evenement.minute = Math.floor(duree.minute);
+      evenement.seconde = Math.floor(duree.seconde);
+    }
   }
 
   public nettoyerEvenement(evt: Evenement, cfg: ConfigTypeEvenement) {

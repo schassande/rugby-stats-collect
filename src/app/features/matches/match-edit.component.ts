@@ -11,6 +11,8 @@ import { MessageModule } from 'primeng/message';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SelectModule } from 'primeng/select';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 import {
   ConditionMeteo,
   ConditionsMeteo,
@@ -42,7 +44,9 @@ import { TeamService } from '@core/services/team.service';
     MultiSelectModule,
     RadioButtonModule,
     SelectModule,
+    ConfirmDialogModule,
   ],
+  providers: [ConfirmationService],
   template: `
     <p-card [header]="isEdit() ? 'Modifier le match' : 'Créer un match'" styleClass="match-card">
       @if (error()) {
@@ -75,50 +79,17 @@ import { TeamService } from '@core/services/team.service';
           <p-multiselect inputId="conditions" formControlName="conditions" [options]="conditionOptions"
             placeholder="Sélectionner les conditions" [showClear]="true" />
         </div>
-        <div class="form-field">
-          <label for="debut">Début</label
-          ><input id="debut" pInputText type="time" formControlName="debut" />
-        </div>
-        <div class="score">
-          <p>Est ce que le match est terminé ?<p>
-            
-          <div class="match-fini-options">
-            <div>
-              <p-radioButton inputId="match-fini-oui" name="matchFini" [value]="true"
-                [ngModel]="matchfini()" (ngModelChange)="matchfini.set($event)"
-                [ngModelOptions]="{ standalone: true }" />
-              <label for="match-fini-oui">Oui</label>
-            </div>
-            <div>
-              <p-radioButton inputId="match-fini-non" name="matchFini" [value]="false"
-                [ngModel]="matchfini()" (ngModelChange)="matchfini.set($event)"
-                [ngModelOptions]="{ standalone: true }" />
-              <label for="match-fini-non">Non</label>
-            </div>
-          </div>
 
-          @if (matchfini()) { 
-            @if (form.value.fin) {
-              <div class="form-field">
-                <label for="fin">Fin</label
-                ><input id="fin" pInputText type="time" formControlName="fin" />
-              </div>
-            }
-            @if (form.value.score) {
-              <span class="score-title">Score final</span>
-              <div class="score-fields" formGroupName="score">
-                <label>Nous <p-inputnumber formControlName="nous" [min]="0" [showButtons]="true"/></label>
-                <label>Adversaire <p-inputnumber formControlName="adversaire" [min]="0" [showButtons]="true"/></label>
-              </div>
-            }
-          }
-        </div>
         <div class="actions">
+          @if (isEdit()) {
+            <p-button label="Supprimer" icon="pi pi-trash" severity="danger" [outlined]="true" type="button" (onClick)="confirmDelete()" />
+          }
           <p-button label="Annuler" severity="secondary" [text]="true" type="button" (onClick)="cancel()"/>
           <p-button [label]="isEdit() ? 'Sauvegarder' : 'Créer'" icon="pi pi-save" type="submit" [loading]="saving()" [disabled]="form.invalid || loading()" />
         </div>
       </form>
     </p-card>
+    <p-confirmdialog></p-confirmdialog>
   `,
   styles: [
     `
@@ -223,6 +194,7 @@ export class MatchEditComponent implements OnInit {
   private readonly matchService = inject(MatchService);
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
+  private readonly confirmationService = inject(ConfirmationService);
 
   readonly team = signal<Equipe>(this.teamService.emptyTeam());
   private match: Match|undefined;
@@ -237,26 +209,8 @@ export class MatchEditComponent implements OnInit {
     lieu: ['Domicile'],
     terrain: ['NATUREL' as TerrainType],
     conditions: [['NORMAL' as ConditionMeteo]],
-    debut: [''],
-    fin: [''],
-    score: this.fb.group({
-      nous: [0, [Validators.required, Validators.min(0)]],
-      adversaire: [0, [Validators.required, Validators.min(0)]],
-    }),
   });
-  matchfini = signal<boolean>(false);
   
-  constructor() {
-    effect(() => {
-      if (this.matchfini()) {
-        if (!this.form.controls.fin.value) {
-          this.form.controls.fin.setValue(this.matchService.getHHMM(new Date()));
-        }
-      } else {
-          this.form.controls.fin.setValue('');
-      }
-    });
-  }
 
   async ngOnInit() {
     try {
@@ -276,15 +230,8 @@ export class MatchEditComponent implements OnInit {
         lieu: match.lieu ?? '',
         terrain: match.terrain ?? 'NATUREL',
         conditions: match.conditions ?? ['NORMAL'],
-        debut: match.debut ?? '',
-        fin: match.fin ?? '',
-        score: {
-          nous: match.score?.nous ?? 0,
-          adversaire: match.score?.adversaire ?? 0,
-        },
       });
 
-      this.matchfini.set(!!this.match!.fin);
     } finally {
       this.loading.set(false);
     }
@@ -296,7 +243,7 @@ export class MatchEditComponent implements OnInit {
       if (!matchId) {
         return undefined;
       }
-      this.match = await this.db.getMatch(+matchId);
+      this.match = await this.db.getMatch(matchId);
       if (!this.match) throw new Error('Match introuvable: '+matchId);
 
       const team = await this.db.getTeam(this.match.equipeId);
@@ -314,13 +261,12 @@ export class MatchEditComponent implements OnInit {
     try {
       const teamId = this.route.snapshot.paramMap.get('teamId');
       if (!teamId) throw new Error('Identifiant equipe manquant lors de la creation d un match.');
-      const team = teamId ? await this.db.getTeam(+teamId) : undefined;
+      const team = teamId ? await this.db.getTeam(teamId) : undefined;
       if (!team) throw new Error('Creation de match impossible: Équipe introuvable: ' + teamId);
       this.team.set(team);
       
       const match = this.matchService.emptyMatch();
-      match.equipeId = +teamId;
-      match.debut = this.matchService.getHHMM(new Date());
+      match.equipeId = teamId;
       
       const saisonParam = this.route.snapshot.queryParamMap.get('saison');
       if (saisonParam) {
@@ -370,5 +316,31 @@ export class MatchEditComponent implements OnInit {
   }
   cancel() {
     this.router.navigate(['/app/teams', this.team().id]);
+  }
+
+  confirmDelete() {
+    const match = this.match;
+    if (!match) return;
+
+    this.confirmationService.confirm({
+      message: `Supprimer le match contre ${match.nomAdversaire} et tous les événements associés ?`,
+      header: 'Confirmation de suppression',
+      icon: 'pi pi-exclamation-triangle',
+      rejectLabel: 'Annuler',
+      acceptLabel: 'Supprimer',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: async () => {
+        try {
+          this.saving.set(true);
+          await this.db.deleteMatch(match.id);
+          await this.router.navigate(['/app/teams', this.team().id]);
+        } catch (error) {
+          console.error('Impossible de supprimer le match.', error);
+          this.error.set('Impossible de supprimer le match.' + JSON.stringify(error));
+        } finally {
+          this.saving.set(false);
+        }
+      },
+    });
   }
 }

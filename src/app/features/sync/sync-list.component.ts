@@ -3,6 +3,8 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 import { DatabaseService } from '@core/services/database.service';
 import { SyncService } from '@core/services/sync.service';
 import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
@@ -10,7 +12,8 @@ import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
 @Component({
   selector: 'app-sync-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, SelectModule, ButtonModule],
+  imports: [CommonModule, FormsModule, SelectModule, ButtonModule, ConfirmDialogModule],
+  providers: [ConfirmationService],
   template: `
     <section class="sync-page">
       <h2>Synchronisations Local / Serveur </h2>
@@ -25,6 +28,9 @@ import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
             ariaLabel="Filtrer les synchronisations par statut" class="status-filter"></p-select>
           <p-button label="Envoyer la sélection" icon="pi pi-refresh" [loading]="isSyncing()"
             [disabled]="isSyncing() || nbSyncs() == 0" (onClick)="synchronize()" class="sync-button"></p-button>
+          <p-button label="Supprimer les synchronisations terminées" icon="fa fa-trash"
+            severity="danger" [outlined]="true" [disabled]="isSyncing()"
+            (onClick)="deleteSynced()" class="sync-button"></p-button>
         </div>
         <div class="sync-list" aria-live="polite">
           @for (sync of syncs(); track sync.id) {
@@ -33,11 +39,25 @@ import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
               <span>{{ sync.objectId }}</span>
               <span>{{ sync.actionType }}</span>
               <span>{{ statusLabel(sync.status) }}</span>
+              <div class="sync-actions">
+                <p-button icon="fa fa-refresh" severity="primary" [text]="true" [rounded]="true"
+                  [disabled]="isSyncing()" ariaLabel="Synchroniser cette ligne" title="Synchroniser cette ligne"
+                  (click)="synchronizeOne(sync, $event)"></p-button>
+                <p-button icon="fa fa-trash" severity="danger" [text]="true" [rounded]="true"
+                  [disabled]="isSyncing()" ariaLabel="Supprimer la synchronisation" title="Supprimer la synchronisation"
+                  (click)="deleteSync(sync, $event)"></p-button>
+              </div>
             </div>
           }
         </div>
       }
+      <h3>Les données sur le serveur</h3>
+      <div class="sync-actions">
+        <p-button label="Récupérer mes equipes" icon="fa fa-downlaod" [loading]="isSyncing()"
+            [disabled]="isSyncing()" (onClick)="recupererMesEquieps()" class="sync-button"></p-button>
+      </div>
     </section>
+    <p-confirmdialog></p-confirmdialog>
   `,
   styles: `
     .sync-page { padding: 1rem; }
@@ -49,15 +69,17 @@ import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
     .sync-list { display: flex; flex-direction: column; gap: .5rem; }
     .sync-item { 
       display: grid; 
-      grid-template-columns: 1fr 1fr 1fr 1fr; 
+      grid-template-columns: 1fr 1fr 1fr 1fr auto; 
       gap: .75rem;
       padding: .75rem; border: 1px solid var(--p-surface-300); border-radius: var(--p-border-radius-md);
       background: var(--p-surface-0); }
+    .sync-actions { display: flex; align-items: center; gap: .25rem; }
   `
 })
 export class SyncListComponent implements OnInit {
   private readonly databaseService = inject(DatabaseService);
   private readonly syncService = inject(SyncService);
+  private readonly confirmationService = inject(ConfirmationService);
   readonly statusOptions = [
     { label: 'Tous les statuts', value: null },
     { label: 'En attente', value: 'pending' as SyncActionStatus },
@@ -88,19 +110,67 @@ export class SyncListComponent implements OnInit {
     this.syncs.set(await this.databaseService.getSyncs(status));
   }
 
+  deleteSync(sync: SyncAction, event: Event): void {
+    event.stopPropagation();
+    this.confirmationService.confirm({
+      message: `Supprimer la synchronisation de ${sync.objectType} #${sync.objectId} ?`,
+      header: 'Confirmation de suppression',
+      icon: 'pi pi-exclamation-triangle',
+      rejectLabel: 'Annuler',
+      acceptLabel: 'Supprimer',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: async () => {
+        await this.databaseService.deleteSync(sync.id);
+        await this.loadSyncs(this.selectedStatus());
+      }
+    });
+  }
+
+  async synchronizeOne(sync: SyncAction, event: Event): Promise<void> {
+    event.stopPropagation();
+    if (this.isSyncing()) return;
+
+    this.isSyncing.set(true);
+    try {
+      await this.syncService.upload(sync);
+      await this.loadSyncs(this.selectedStatus());
+    } finally {
+      this.isSyncing.set(false);
+    }
+  }
+
+  deleteSynced(): void {
+    this.confirmationService.confirm({
+      message: 'Supprimer toutes les synchronisations avec le statut « synchronisée » ?',
+      header: 'Confirmation de suppression',
+      icon: 'pi pi-exclamation-triangle',
+      rejectLabel: 'Annuler',
+      acceptLabel: 'Supprimer',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: async () => {
+        await this.databaseService.deleteSyncsByStatus('synced');
+        await this.loadSyncs(this.selectedStatus());
+      }
+    });
+  }
+
   async synchronize(): Promise<void> {
     if (this.isSyncing() || this.nbSyncs() === 0) return;
     this.isSyncing.set(true);
     try {
       this.syncTarget.set(this.syncs().length);
       this.syncDone.set(0);
-      this.syncs().forEach(async (sync,idx) => {
-        await this.syncService.upload(sync);
-        this.syncDone.set(idx+1);
-      })
+      await Promise.all(
+        this.syncs().map((sync) => 
+          this.syncService.upload(sync)
+            .then(()=> this.syncDone.update(v=>v+1)))
+      );
       await this.loadSyncs(this.selectedStatus());
     } finally {
       this.isSyncing.set(false);
     }
+  }
+  async recupererMesEquieps() {
+    await this.syncService.chargerMesEquipes();
   }
 }

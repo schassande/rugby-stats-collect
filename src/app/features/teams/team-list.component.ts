@@ -108,7 +108,7 @@ export class TeamListComponent {
   private readonly router = inject(Router);
   private readonly confirmationService = inject(ConfirmationService);
   teams = toSignal(this.teamService.myTeams(), { initialValue: null });
-  private readonly deletedTeamIds = signal<Set<number>>(new Set());
+  private readonly deletedTeamIds = signal<Set<string>>(new Set());
   visibleTeams = computed(() => {
     const teams = this.teams() ?? [];
     const deletedIds = this.deletedTeamIds();

@@ -44,15 +44,15 @@ import { TeamService } from '@core/services/team.service';
             <p-card (click)="viewMatch(match)">
               <div class="match-row">
                 <div class="match-content">
-              {{ match.date | date:'yyyy/MM/dd' }} {{ match.debut }} vs {{ match.nomAdversaire }} à {{match.lieu}}
-              @if (match.fin) {
-                <p>Terminé à {{match.fin}} sur 
-                  {{ match.score.nous > match.score.adversaire 
+              {{ match.date | date:'yyyy/MM/dd' }} {{ match.temps?.debutMatch| date:'HH:mm' }} vs {{ match.nomAdversaire }} à {{match.lieu}}
+              @if (match.temps?.finMatch) {
+                <p>Terminé à {{match.temps!.finMatch }} sur 
+                  {{ match.score!.nous > match.score!.adversaire 
                     ? "une victoire" : 
-                      match.score.nous < match.score.adversaire 
+                      match.score!.nous < match.score!.adversaire 
                       ? "une défaite" : "une égalite "
                   }}
-                  {{ match.score.nous }}-{{ match.score.adversaire }}</p>
+                  {{ match.score!.nous }}-{{ match.score!.adversaire }}</p>
               }
               </div>
                 <p-button
@@ -147,7 +147,7 @@ export class TeamDetailComponent implements OnInit {
     this.season.set(this.teamService.currentSeason());
     const teamId = this.route.snapshot.paramMap.get('teamId');
     if (teamId) {
-      this.team.set(await this.db.getTeam(+teamId));
+      this.team.set(await this.db.getTeam(teamId));
     } else {
       this.router.navigate(['/app/home']);
       return;

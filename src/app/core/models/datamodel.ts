@@ -28,26 +28,30 @@ export const Saisons: Saison[] = [
   '2031/2032',
 ];
 
-export interface Manager {
-  id: string; // email
+export interface HasStringId {
+  id: string;
+}
+export interface Manager extends HasStringId {
+  // id = email
   prenom: string;
   nom: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface Equipe {
-  id: number;
+export interface Equipe extends HasStringId {
   nom: string;
   managerIds: string[];
   logo?: string;
   createdAt: string;
   updatedAt: string;
 }
-
-export interface Match {
-  id: number;
-  equipeId: number;
+export interface Duree {
+  minute: number; 
+  seconde: number;
+}
+export interface Match extends HasStringId{
+  equipeId: string;
   managerId: string;
   date: string;
   saison: Saison;
@@ -55,9 +59,16 @@ export interface Match {
   terrain?: TerrainType;
   nomAdversaire: string;
   conditions?: ConditionMeteo[];
-  debut?: string;
-  fin?: string;
-  score: {
+  temps?: {
+    debutMatch?: string;
+    fin1ereMiTemps?: string;
+    duree1ereMiTemps?: Duree;
+    
+    debut2iemeMiTemps?: string;
+    finMatch?: string;
+    duree2iemeMiTemps?: Duree;
+  }
+  score?: {
     nous: number;
     adversaire: number;
   };
@@ -66,9 +77,8 @@ export interface Match {
   syncedAt?: string;
 }
 
-export interface Evenement {
-  id: number;
-  matchId: number;
+export interface Evenement extends HasStringId {
+  matchId: string;
   periode: Periode;
   instant: string;
   minute?: number;
@@ -272,7 +282,7 @@ export const configsTypeEvenemnt : ConfigTypeEvenement[] = [
   new ConfigTypeEvenement('FAIT_DE_JEU', 'ARRET_VOLEE', 'Arrêt de volée')._positionLargeur()._numeroJoueur1()._noIcon()._equipe()._periode(),
   new ConfigTypeEvenement('FAIT_DE_JEU', 'INTERCEPTION', 'Interception')._zoneTerrain()._numeroJoueur1()._noIcon()._equipe()._periode(),
   new ConfigTypeEvenement('FAIT_DE_JEU', '50_22', '50-22')._numeroJoueur1()._noIcon()._equipe()._periode(),
-  new ConfigTypeEvenement('FAIT_DE_JEU', 'ESSAI_SAUVE_SUR_MAUL', 'Essai sauvé sur maul')._numeroJoueur1()._noIcon()._equipe()._periode(),
+  // new ConfigTypeEvenement('FAIT_DE_JEU', 'ESSAI_SAUVE_SUR_MAUL', 'Essai sauvé sur maul')._numeroJoueur1()._noIcon()._equipe()._periode(),
 
   new ConfigTypeEvenement('DISCIPLINE', 'PENALITE', 'Pénalité')._fautesPenalite()._complementDiscipline()
     ._choixDeJeuPenalite()._zoneTerrain()._positionLargeur()._numeroJoueur1()._resultat()._equipe()._periode(),
@@ -303,7 +313,7 @@ export type SyncActionStatus = 'pending' | 'syncing' | 'synced' | 'conflict' | '
 export interface SyncAction {
   id: number;
   objectType: SyncObjectType;
-  objectId: number;
+  objectId: string;
   actionType: SyncActionType;
   status: SyncActionStatus;
   createdAt: string;

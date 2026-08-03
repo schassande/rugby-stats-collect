@@ -1,11 +1,9 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { Router, RouterOutlet, RouterLinkWithHref } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
-import { db } from '@core/db/rugby-stats.database';
 import { TeamService } from '@core/services/team.service';
 import { MatchService } from '@core/services/match.service';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { SyncService } from '@core/services/sync.service';
 import { DatabaseService } from '@core/services/database.service';
 
 @Component({
@@ -23,6 +21,8 @@ import { DatabaseService } from '@core/services/database.service';
         @if (user()) {
           <div class="user-info">
             Connecté : {{ user()?.prenom }} {{ user()?.nom }}
+            <div>{{equipeSelectionnee() ? equipeSelectionnee()!.id : ''}}</div>
+            <div>{{matchSelectionne() ? matchSelectionne()!.id : ''}}</div>
           </div>
           <nav class="tab-bar" aria-label="Navigation principale">
             <a routerLink="/app/welcome" routerLinkActive="active" class="tab-item">
@@ -154,7 +154,6 @@ import { DatabaseService } from '@core/services/database.service';
 })
 export class App implements OnInit {
   private readonly authService = inject(AuthService);
-  private readonly syncService = inject(SyncService);
   private readonly databaseService = inject(DatabaseService);
   private readonly auth = inject(AuthService);
   private readonly teamService = inject(TeamService);
@@ -167,10 +166,10 @@ export class App implements OnInit {
   pendingSync = toSignal(this.databaseService.currentPendingSync$)
 
   voirMatchSelectionne() {
-    this.router.navigate(['/app/match', this.matchService.getCurrentMatch()!.id])
+    this.router.navigate(['/app/match', this.matchSelectionne()!.id])
   }
   voirEquipeSelectionnee() {
-    this.router.navigate(['/app/team', this.teamService.getCurrentTeam()!.id])
+    this.router.navigate(['/app/teams', this.equipeSelectionnee()!.id])
   }
 
   async logout() {

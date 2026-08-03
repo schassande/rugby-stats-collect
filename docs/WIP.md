@@ -11,3 +11,4 @@ TODO list
 DONE
 - Mettre la protection sur les tables firestore avec les règles (stocker les règles dans GIT). utiliser les managerId pour controler les acces
 - Enlever le score Transformation et ajouter un résultat essai car c'est forcément à la suite
+- Calculer les temps des evenements par rapport au début du match/debut 2ieme mi-temps

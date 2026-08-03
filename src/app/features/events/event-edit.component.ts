@@ -99,16 +99,11 @@ export class EventEditComponent implements OnInit {
     try {
       this.loading.set(true);
       this.event.set(await this.loadEvenement() || await this.createEvenement());
-      if (!this.event()) {
-        this.error.set('Erreur technique de création d’un événement');
+      if (!this.event() || !this.match()) {
+        this.error.set('Erreur technique de création d un événement');
         return;
       }
 
-      this.match.set(await this.db.getMatch(this.event()!.matchId));
-      if (!this.match()) {
-        this.error.set('Impossible de créer un événement pour un match introuvable');
-        return;
-      }
       this.matchService.setCurrentMatch(this.match())
 
       this.form.patchValue({
@@ -135,7 +130,7 @@ export class EventEditComponent implements OnInit {
         numeroJoueur2: this.event()!.numeroJoueur2,
         distanceJeuPied: this.event()!.distanceJeuPied,
       });
-      this.onNatureChange(this.event()!.nature);
+      this.onNatureChange(this.event()!.nature, false);
       this.onTypeChange(this.event()!.type);
       this.updateValidators();
       
@@ -143,6 +138,7 @@ export class EventEditComponent implements OnInit {
     } finally {
       this.loading.set(false);
       if (this.error()) {
+        console.error(this.error());
         this.router.navigate(['/app/home']);
       }
     }
@@ -153,15 +149,16 @@ export class EventEditComponent implements OnInit {
     // mise à jour du cache de la periode pour le prochain événement
     this.evenementService.periodeCourante = periode;
   }
-  protected onNatureChange(nature: NatureEvenement): void {
+  protected onNatureChange(nature: NatureEvenement, userChange = true): void {
     this.form.controls.nature.setValue(nature);
-    this.event.update(ev => ev ? { ...ev, nature } : undefined);
+      this.event.update(ev => ev ? { ...ev, nature } : undefined);
     this.eventTypeOptions.set(this.getTypeOptions(nature));
-
-    const typeDefaut = DEFAUT_TYPE_EVENEMENT.find(d => d.nature === nature)?.type;
-    if (typeDefaut) this.onTypeChange(typeDefaut);
+    if (userChange) {
+      const typeDefaut = DEFAUT_TYPE_EVENEMENT.find(d => d.nature === nature)?.type;
+      if (typeDefaut) this.onTypeChange(typeDefaut, userChange);
+    }
   }
-  protected onTypeChange(type: TypeEvenement): void { 
+  protected onTypeChange(type: TypeEvenement, userChange = true): void { 
     this.form.controls.type.setValue(type);
     this.event.update(ev => ev ? { ...ev, type } : undefined);
     if (this.config()?.resultat && !this.event()!.resultat) { 
@@ -292,8 +289,11 @@ export class EventEditComponent implements OnInit {
         const createdEvent = await this.db.addEvent(eventToCreate);
         this.event.set(createdEvent);
       }
-      if (this.besoinCalculerScore || event.nature === 'SCORE') {
-        await this.matchService.calculerScore(this.match()!.id);
+
+      if (this.besoinCalculerScore || event.nature === 'SCORE' || event.type === 'PENALITE') {
+        const m:Match = this.match()!;
+        await this.matchService.calculerScore(m.id);
+        this.match.update(() => { return { ...m}; })
       }
       await this.router.navigate(createAnother
         ? ['/app/match', event.matchId, 'event', 'new']
@@ -340,13 +340,19 @@ export class EventEditComponent implements OnInit {
         return undefined;
       }
 
-      this.event.set(await this.db.getEvent(+eventId));
+      this.event.set(await this.db.getEvent(eventId));
       if (!this.event()) {
         this.error.set(`Événement introuvable : ${eventId}`);
         return undefined;
       }
+      this.match.set(await this.db.getMatch(this.event()!.matchId));
+      if (!this.match()) {
+        this.error.set('Impossible de créer un événement pour un match introuvable');
+        return undefined;
+      }      
       this.besoinCalculerScore = this.event()!.nature === 'SCORE';
       this.isEdit.set(true);
+      console.log(this.event())
       return this.event();
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Impossible de charger l’événement.');
@@ -358,18 +364,29 @@ export class EventEditComponent implements OnInit {
     try {
       const matchId = this.route.snapshot.paramMap.get('matchId');
       if (!matchId) {
+        console.error('Identifiant match manquant lors de la création d un événement.')
         this.error.set('Identifiant match manquant lors de la création d un événement.');
         return undefined;
       }
+      this.match.set(await this.db.getMatch(matchId));
+      if (!this.match()) {
+        console.error('Impossible de créer un événement pour un match introuvable: ', +matchId);
+        this.error.set('Impossible de créer un événement pour un match introuvable');
+        return;
+      }      
 
-      this.event.set(this.evenementService.emptyEvenement());
-      this.event.update((ev) => {
-        ev!.matchId = +matchId;
+      this.event.update(() => {
+        console.debug('Creation d un evenement vide');
+        const ev = this.evenementService.emptyEvenement()
+        ev!.matchId = matchId;
+        ev.periode = this.match()?.temps?.debut2iemeMiTemps ? 2 : 1;
+        this.evenementService.calculerEvenementHeureMinute(ev!, this.match()!)
         return ev;
       });
       this.isEdit.set(false);
       return this.event();
     } catch (e) {
+      console.log('Erreur lors de la creation de l evenemnt', e);
       this.error.set(e instanceof Error ? e.message : 'Impossible de créer l événement.');
       return undefined;
     }
