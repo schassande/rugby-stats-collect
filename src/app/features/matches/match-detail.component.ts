@@ -250,7 +250,7 @@ import { MatchDashboardComponent } from './match-dashboard.component';
     .buttons {
       position: absolute;
       bottom: 90px;
-      right: 10px;
+      right: 30px;
     }
     .buttons pi{
       font-weight: bold;
