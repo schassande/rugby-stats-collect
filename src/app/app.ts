@@ -21,8 +21,6 @@ import { DatabaseService } from '@core/services/database.service';
         @if (user()) {
           <div class="user-info">
             Connecté : {{ user()?.prenom }} {{ user()?.nom }}
-            <div>{{equipeSelectionnee() ? equipeSelectionnee()!.id : ''}}</div>
-            <div>{{matchSelectionne() ? matchSelectionne()!.id : ''}}</div>
           </div>
           <nav class="tab-bar" aria-label="Navigation principale">
             <a routerLink="/app/welcome" routerLinkActive="active" class="tab-item">
@@ -58,6 +56,7 @@ import { DatabaseService } from '@core/services/database.service';
   `,
   styles: [`
     .app-shell {
+      position: relative;
       display: flex;
       flex-direction: column;
       height: 100dvh;
