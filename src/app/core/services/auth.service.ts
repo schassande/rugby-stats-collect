@@ -100,7 +100,7 @@ export class AuthService {
     await new Promise<void>((resolve) => {
       let firstEmission = true;
       onAuthStateChanged(auth, (fbUser) => {
-        console.log('onAuthStateChanged:', fbUser, fbUser?.metadata.lastSignInTime);
+        // console.log('onAuthStateChanged:', fbUser, fbUser?.metadata.lastSignInTime);
         if (!fbUser) {
           if (firstEmission) { firstEmission = false; resolve(); }
           return;
