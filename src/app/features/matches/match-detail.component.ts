@@ -7,11 +7,12 @@ import { MatchService } from '@core/services/match.service';
 import { Duree, Equipe, Evenement, Match } from '@core/models/datamodel';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { MatchDashboardComponent } from './match-dashboard.component';
 
 @Component({
   selector: 'app-match-detail',
   standalone: true,
-  imports: [CommonModule, ButtonModule, CardModule],
+  imports: [CommonModule, ButtonModule, CardModule, MatchDashboardComponent],
   template: `
     @if (match()) {
     <section>
@@ -46,6 +47,9 @@ import { CardModule } from 'primeng/card';
         }
       </div>
       
+      <h3>Vue synthétique</h3>
+      <app-match-dashboard [team]="team()" [match]="match()" [events]="events()" />
+
       <h3>Liste des événements</h3>
       <div class="events-list">
         <div class="event-list-header">

@@ -1,8 +1,9 @@
-# Tableau comparatif du match
+# Tableau synthese d'un match
 
 ## Objectif
 
-Ajouter à la page `match-detail` un tableau comparatif des événements des deux équipes, lisible sur mobile.
+Ajouter à la page `match-detail` un tableau de synthese d'un match entre des deux équipes, lisible sur mobile.
+Ce tableau de bord est un component independant: MatchDashboard Ce widget a 3 parametres d'entrée: Team, Match, Evenement[]. C'est la page match-detail qui lui passe les paramètres.
 
 ## Filtre de période
 
@@ -13,6 +14,7 @@ Un filtre placé au-dessus du tableau permet de sélectionner la période affich
 - **Match complet** : événements des deux mi-temps.
 
 L'option **Match complet** est sélectionnée par défaut.
+Le filtre est réalisé avec un widget primeNG Select.
 
 ## Structure du tableau
 
@@ -29,46 +31,18 @@ Le tableau comporte trois colonnes :
 
 Une ligne est dédiée à chaque nature d'événement. La nature `TEMPS` n'est pas affichée : elle sert au chronométrage et à la délimitation des périodes.
 
+Le tableau fera au max 400px de large. Il sera centré en largeur sur la page match-detail.
+
 ## Contenu des cellules
 
-Chaque événement est affiché sur une ligne à l'intérieur de sa cellule, avec :
-
-1. l'heure ou la minute de l'événement ;
-2. le type d'événement ;
-3. le résultat, lorsqu'il existe.
-
+Dans une ligne de la nature la cellule contient une ligne pour chaque type d'événement de la nature de l'événement.
+Sur la ligne on affiche : le nom du type et le nombre d'occurrence de l'événement sur la période choisie (1, 2 ou total)
 Exemples :
 
 ```text
-12:35 · Essai · Réussi
-28:10 · Drop · Réussi
+Essai: 4
+Drop: 1
 ```
 
-Les événements sont triés par ordre chronologique. Une cellule sans événement affiche `—`.
-
-Avec le filtre **Match complet**, les événements des deux mi-temps sont regroupés et restent triés chronologiquement.
-
-## Natures utilisées
-
-Les lignes correspondent aux valeurs de `Evenement.nature` :
-
-- `SCORE` — Score ;
-- `CONQUETE` — Conquête ;
-- `DISCIPLINE` — Discipline ;
-- `FAIT_DE_JEU` — Fait de jeu ;
-- `ERREUR` — Erreur ;
-- `REMPLACEMENT` — Remplacement.
-
-Les événements sont répartis dans les colonnes selon leur équipe (`NOUS` ou `ADV`) et filtrés selon leur période.
-
-## Exemple d'affichage
-
-| Nature d'événement | Nous | Adversaire |
-|---|---|---|
-| Score | `12:35 · Essai · Réussi`<br>`28:10 · Drop · Réussi` | `19:42 · Essai · Réussi` |
-| Conquête | `08:15 · Touche · Gagnée`<br>`22:30 · Mêlée · Gagnée` | `15:05 · Touche · Perdue` |
-| Discipline | `25:40 · Pénalité · Commise` | `31:12 · Pénalité · Commise` |
-| Fait de jeu | `18:20 · Ruck · Conservé` | `—` |
-| Erreur | `34:05 · En-avant` | `11:45 · Sortie en touche` |
-| Remplacement | `40:00 · Normal` | `—` |
+Avec le filtre **Match complet**, les événements des deux mi-temps sont regroupés/cumulés
 

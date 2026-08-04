@@ -1,6 +1,5 @@
 
 TODO list
-- Dans la page du match afficher un tableau comparatif des 2 équipes par mi-temps. une ligne par catégorie
 - Authentification automatique en local
 - tester la synchro lorsque connecté local
 - Export Excel d'un match ou de tous les matches d'une équipe
@@ -12,3 +11,4 @@ DONE
 - Mettre la protection sur les tables firestore avec les règles (stocker les règles dans GIT). utiliser les managerId pour controler les acces
 - Enlever le score Transformation et ajouter un résultat essai car c'est forcément à la suite
 - Calculer les temps des evenements par rapport au début du match/debut 2ieme mi-temps
+- Dans la page du match afficher un tableau comparatif des 2 équipes par mi-temps. une ligne par catégorie
