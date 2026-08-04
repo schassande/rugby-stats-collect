@@ -1,18 +1,25 @@
 import { Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthMode, AuthService } from '@core/services/auth.service';
 import { AuthModeToggle } from '../../components/auth-mode-toggle.component';
 import { LocalUser } from '@core/db/rugby-stats.database';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+import { PanelModule } from 'primeng/panel';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, AuthModeToggle],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, AuthModeToggle, CheckboxModule, ButtonModule, InputTextModule, PasswordModule, PanelModule],
   template: `
     <div class="login-container">
+      <h1>Connexion à l'application</h1>
       <auth-mode-toggle [(mode)]="localAuth"></auth-mode-toggle>
+      <div style="height: 20px;"></div>
       @if (localAuth() == 'local') {
         <p class="local-users">Liste des utilisateurs locaux :</p>
         @for(localUser of localUsers() | async; track localUser.id) {
@@ -23,27 +30,36 @@ import { LocalUser } from '@core/db/rugby-stats.database';
         } @empty {
           <p>Aucun utilisateur local. Connectez vous une première fois en ligne pour que votre compte soit disponible hors ligne.</p>
         }
+        <div class="auto-login">
+          <label>
+            <p-checkbox inputId="auto-login-local" [binary]="true" [(ngModel)]="autoLoginLocal" (ngModelChange)="setAutoLoginLocal($event)" />
+            Se connecter automatiquement
+          </label>
+        </div>
       } @else {
+        <p-button class="google-login" type="button" label="Google" icon="pi pi-google" (onClick)="loginWithGoogle()" severity="secondary" />
+        <div class="login-separator" aria-hidden="true"><span>OU</span></div>
+        <p-panel class="login-panel">
         <form [formGroup]="form" (ngSubmit)="login()">
           <div class="form-field">
             <label for="email">Email</label>
-            <input id="email" formControlName="email" type="email" placeholder="Email" autocomplete="username"/>
+            <input pInputText id="email" formControlName="email" type="email" placeholder="Email" autocomplete="username"/>
           </div>
 
           <div class="form-field">
             <label for="password">Mot de passe</label>
-            <input id="password" formControlName="password" type="password" placeholder="Mot de passe" autocomplete="current-password" />
+            <p-password formControlName="password" placeholder="Mot de passe" autocomplete="current-password" [feedback]="false" />
           </div>
 
           <div class="actions">
-            <button type="submit">Connexion</button>
-            <button type="button" (click)="loginWithGoogle()"><i class="fa-brands fa-google"></i> Google</button>
+            <p-button type="submit" label="Connexion" />
           </div>
         </form>
 
         <div class="auth-footer">
           <p>Pas encore de compte ? <a routerLink="/auth/signup">Créer un compte</a></p>
         </div>
+        </p-panel>
       }
 
       <div *ngIf="error" class="error">{{ error }}</div>
@@ -67,9 +83,8 @@ import { LocalUser } from '@core/db/rugby-stats.database';
         text-align: center;
       }
       .local-users {
-        margin-top: 50px;
+        margin-top: 20px;
         margin-bottom: 20px;
-        text-align: center;
       }
       .local-user {
         border: 1px solid black;
@@ -87,17 +102,71 @@ import { LocalUser } from '@core/db/rugby-stats.database';
         float: right;
       }
       .form-field {
+        display: grid;
+        grid-template-columns: 110px minmax(0, 1fr);
+        align-items: center;
+        gap: 0.75rem;
         margin-bottom: 1rem;
       }
       .form-field input {
-        display: block;
         width: 100%;
         min-width: 0;
       }
 
+      :host ::ng-deep .form-field p-password,
+      :host ::ng-deep .form-field p-password .p-password,
+      :host ::ng-deep .form-field p-password input {
+        display: block;
+        width: 100%;
+      }
+
       .actions {
-        display: grid;
+        display: flex;
+        justify-content: flex-end;
         gap: 1rem;
+      }
+
+      .google-login {
+        display: block;
+        width: 100%;
+      }
+
+      :host ::ng-deep .google-login button {
+        width: 100%;
+      }
+
+      .login-panel {
+        display: block;
+        margin-top: 1rem;
+      }
+
+      .auth-footer {
+        margin-top: 1.25rem;
+      }
+
+      :host ::ng-deep .login-panel .p-panel-title {
+        width: 100%;
+        text-align: center;
+      }
+
+      .login-separator {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 1rem 0;
+        color: #6b7280;
+        font-size: 0.85rem;
+      }
+
+      .login-separator::before,
+      .login-separator::after {
+        content: '';
+        flex: 1;
+        border-top: 1px solid #d1d5db;
+      }
+      .auto-login {
+        margin: 30px auto 0 auto;
+        text-align: right;
       }
     `
   ]
@@ -107,6 +176,7 @@ export class LoginComponent {
   error: string | null = null;
   private readonly returnUrl: string;
   protected localAuth = signal<AuthMode>('local');
+  protected autoLoginLocal = signal(false);
   protected localUsers = computed(async () => {
     if (this.localAuth() === 'local') {
       return await this.auth.getLocalUsers();
@@ -122,6 +192,7 @@ export class LoginComponent {
     private readonly route: ActivatedRoute
   ) {
     this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/app';
+    this.autoLoginLocal.set(this.auth.isAutoLoginLocalEnabled());
     this.form = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
@@ -154,8 +225,13 @@ export class LoginComponent {
   }
 
   async localSignIn(localUser: LocalUser): Promise<void> {
-    this.auth.loginLocal(localUser);
+    await this.auth.loginLocal(localUser);
     await this.router.navigate([this.returnUrl]);
+  }
+
+  setAutoLoginLocal(enabled: boolean): void {
+    this.auth.setAutoLoginLocalEnabled(enabled);
+    this.autoLoginLocal.set(enabled);
   }
 
   deleteLocalUser(localUser: LocalUser) {

@@ -10,10 +10,10 @@ import { AuthMode, AuthService } from '@core/services/auth.service';
   template: `
     <div class="auth-mode-toggle">
       <label>
-        <input type="radio" name="authMode" [checked]="mode()==='firebase'" (change)="setMode('firebase')" /> En ligne
+        <input type="radio" name="authMode" [checked]="mode()==='firebase'" (change)="setMode('firebase')" /> Mode en ligne
       </label>
       <label>
-        <input type="radio" name="authMode" [checked]="mode()==='local'" (change)="setMode('local')" /> Hors ligne
+        <input type="radio" name="authMode" [checked]="mode()==='local'" (change)="setMode('local')" /> Mode hors ligne
       </label>
     </div>
   `,

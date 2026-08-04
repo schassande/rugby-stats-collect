@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router, RouterOutlet, RouterLinkWithHref } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { TeamService } from '@core/services/team.service';
@@ -151,8 +151,7 @@ import { DatabaseService } from '@core/services/database.service';
     
   `]
 })
-export class App implements OnInit {
-  private readonly authService = inject(AuthService);
+export class App {
   private readonly databaseService = inject(DatabaseService);
   private readonly auth = inject(AuthService);
   private readonly teamService = inject(TeamService);
@@ -176,7 +175,4 @@ export class App implements OnInit {
     await this.router.navigateByUrl('/');
   }
 
-  ngOnInit(): void {
-    this.authService.initializeAuthPersistenceAndRestoreSession();
-  }
 }

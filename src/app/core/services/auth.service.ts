@@ -14,6 +14,7 @@ export type AuthMode = 'local' | 'firebase';
 export class AuthService {
   private static readonly SALT = 'rugby_local_salt_v1';
   private static readonly LOCAL_STORAGE_AUTH_MODE = 'auth_mode';
+  private static readonly LOCAL_STORAGE_AUTO_LOGIN = 'auto_login_local';
 
   /** User firebase */
   private currentUserSubject = new BehaviorSubject<User | null>(null);
@@ -99,21 +100,20 @@ export class AuthService {
     await new Promise<void>((resolve) => {
       let firstEmission = true;
       onAuthStateChanged(auth, (fbUser) => {
-        // console.log('onAuthStateChanged:', fbUser, fbUser?.metadata.lastSignInTime);
-        if (!fbUser) return;
-        try {
-          fbUser.reload()
+        console.log('onAuthStateChanged:', fbUser, fbUser?.metadata.lastSignInTime);
+        if (!fbUser) {
+          if (firstEmission) { firstEmission = false; resolve(); }
+          return;
+        }
+        fbUser.reload()
             .then(() => this.manageFirebaseAuthUser(fbUser))
             .catch(error => {
               console.warn('Profil Firestore indisponible au démarrage:', error);
               this.currentUserSubject.next(fbUser);
+            })
+            .finally(() => {
+              if (firstEmission) { firstEmission = false; resolve(); }
             });
-        } finally {
-          if (firstEmission) {
-            firstEmission = false;
-            resolve();
-          }
-        }
       });
     });
   }
@@ -121,6 +121,26 @@ export class AuthService {
   public async loginWithGoogle(): Promise<void> {
     const fbUser = await signInWithPopup(auth,new GoogleAuthProvider());
     await this.manageFirebaseAuthResult(fbUser)
+  }
+
+  public isAutoLoginLocalEnabled(): boolean {
+    return localStorage.getItem(AuthService.LOCAL_STORAGE_AUTO_LOGIN) === 'true';
+  }
+
+  public setAutoLoginLocalEnabled(enabled: boolean): void {
+    localStorage.setItem(AuthService.LOCAL_STORAGE_AUTO_LOGIN, String(enabled));
+  }
+
+  public async initializeAutoLoginLocal(): Promise<void> {
+    if (!this.isAutoLoginLocalEnabled() || auth?.currentUser || this.currentManagerSubject.value) return;
+    try {
+      const users = await this.getLocalUsers();
+      if (users.length === 1 && !auth?.currentUser && !this.currentManagerSubject.value) {
+        await this.loginLocal(users[0]);
+      }
+    } catch (error) {
+      console.error('Erreur pendant l’auto-login local', error);
+    }
   }
 
   private async manageFirebaseAuthResult(fbUser: UserCredential|null, password: string = ''): Promise<void> {
@@ -167,6 +187,7 @@ export class AuthService {
   }
 
   public async signOut(): Promise<void> {
+    this.setAutoLoginLocalEnabled(false);
     this.currentUserSubject.next(null);
     this.currentManagerSubject.next(null);
     if (this.getAuthMode() === 'firebase') {
