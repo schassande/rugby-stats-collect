@@ -101,10 +101,10 @@ export class SyncService {
    * Recherche dans la base de données firestore de toutes les équipes dont je suis le manager. 
    * Puis stockage dans la base locale
    */
-  public async chargerMesEquipes(): Promise<void> {
+  public async chargerMesEquipes(): Promise<Equipe[]> {
     const manager = this.authService.getCurrentManager();
     if (!manager) {
-      return;
+      return [];
     }
     const q = query(
       collection(firestoreDatabase!, SyncService.COLLECTIION_EQUIPE),
@@ -113,6 +113,15 @@ export class SyncService {
     const snapshot = await getDocs(q);
     const objs = snapshot.docs.map(d => d.data() as Equipe);
     await this.databaseService.importTeams(objs);
+    return objs;
+  }
+
+  /**
+   * Recherche puis stocke localement les matches de toutes les équipes dont je suis le manager.
+   */
+  public async chargerMatchesDeMesEquipes(): Promise<void> {
+    const equipes = await this.chargerMesEquipes();
+    await Promise.all(equipes.map(equipe => this.chargerMatches(equipe)));
   }
 
   /** 
@@ -122,7 +131,7 @@ export class SyncService {
   public async chargerMatches(equipe: Equipe) {
     const q = query(
       collection(firestoreDatabase!, SyncService.COLLECTIION_MATCH),
-      where('equipe', '==', equipe.id)
+      where('equipeId', '==', equipe.id)
     );
     const snapshot = await getDocs(q);
     const objs = snapshot.docs.map(d => d.data() as Match);

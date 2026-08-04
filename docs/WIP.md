@@ -1,5 +1,6 @@
 
 TODO list
+- Télécharger en local les matches et en options les événements : BUG Permission
 - tester la synchro lorsque connecté local
 - Export Excel d'un match ou de tous les matches d'une équipe
 - déploiement avec nom de domaine rugbystat.chassande.fr

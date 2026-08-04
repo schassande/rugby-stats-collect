@@ -1,12 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { DatabaseService } from '@core/services/database.service';
 import { SyncService } from '@core/services/sync.service';
+import { AuthService } from '@core/services/auth.service';
 import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
 
 @Component({
@@ -17,7 +19,18 @@ import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
   template: `
     <section class="sync-page">
       <h2>Synchronisations Local / Serveur </h2>
-      @if (isSyncing()) {
+      @if (checkingFirebaseAuth()) {
+        <p>Vérification de la connexion en ligne...</p>
+      } @else if (!firebaseConnected()) {
+        <div class="offline-message">
+          <p>Pour transférer des données entre l application et le serveur, 
+            <br>vous devez vous connecter en ligne.
+          </p>
+          <div style="margin-top: 30px;">
+            <a  href="" (click)="goToOnlineAuthentication($event)">Aller à la page de connexion</a>
+          </div>
+        </div>
+      } @else if (isSyncing()) {
         <p>Envoi des données en cours: {{syncDone()}}/{{syncTarget()}}
       } @else {
         <h3>Les données en locales ({{nbSyncs()}})</h3>
@@ -50,10 +63,13 @@ import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
               </div>
             }
           </div>
+
         <h3>Les données sur le serveur</h3>
         <div class="sync-actions">
           <p-button label="Récupérer mes equipes" icon="fa fa-download" [loading]="isSyncing()"
               [disabled]="isSyncing()" (onClick)="recupererMesEquieps()" class="sync-button"></p-button>
+          <p-button label="Récupérer les matches de mes équipes" icon="fa fa-download" [loading]="isSyncing()"
+              [disabled]="isSyncing()" (onClick)="recupererMesMatches()" class="sync-button"></p-button>
         </div>
       }
     </section>
@@ -74,12 +90,16 @@ import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
       padding: .75rem; border: 1px solid var(--p-surface-300); border-radius: var(--p-border-radius-md);
       background: var(--p-surface-0); }
     .sync-actions { display: flex; align-items: center; gap: .25rem; }
+    .offline-message { max-width: 600px; margin: 2rem auto; text-align: center; }
+    .offline-message a { color: var(--p-primary-color); cursor: pointer; }
   `
 })
 export class SyncListComponent implements OnInit {
   private readonly databaseService = inject(DatabaseService);
   private readonly syncService = inject(SyncService);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
   readonly statusOptions = [
     { label: 'Tous les statuts', value: null },
     { label: 'En attente', value: 'pending' as SyncActionStatus },
@@ -96,13 +116,30 @@ export class SyncListComponent implements OnInit {
   });
   readonly syncDone = signal<number>(0);
   readonly syncTarget = signal<number>(0);
+  readonly checkingFirebaseAuth = signal(true);
+  readonly firebaseConnected = signal(false);
 
   statusLabel(status: SyncActionStatus): string {
     return this.statusOptions.find(option => option.value === status)?.label ?? status;
   }
 
   async ngOnInit(): Promise<void> {
+    try {
+      await this.authService.checkFirebaseUserConnected();
+      this.firebaseConnected.set(true);
+    } catch {
+      this.firebaseConnected.set(false);
+    } finally {
+      this.checkingFirebaseAuth.set(false);
+    }
     await this.loadSyncs(this.selectedStatus());
+  }
+
+  async goToOnlineAuthentication(event: Event): Promise<void> {
+    event.preventDefault();
+    this.authService.setAutoLoginLocalEnabled(false);
+    this.authService.setAuthMode('firebase');
+    await this.router.navigate(['/auth/login'], { queryParams: { returnUrl: '/app/sync' } });
   }
 
   async loadSyncs(status: SyncActionStatus | undefined): Promise<void> {
@@ -171,6 +208,22 @@ export class SyncListComponent implements OnInit {
     }
   }
   async recupererMesEquieps() {
-    await this.syncService.chargerMesEquipes();
+    if (this.isSyncing()) return;
+    this.isSyncing.set(true);
+    try {
+      await this.syncService.chargerMesEquipes();
+    } finally {
+      this.isSyncing.set(false);
+    }
+  }
+
+  async recupererMesMatches(): Promise<void> {
+    if (this.isSyncing()) return;
+    this.isSyncing.set(true);
+    try {
+      await this.syncService.chargerMatchesDeMesEquipes();
+    } finally {
+      this.isSyncing.set(false);
+    }
   }
 }
