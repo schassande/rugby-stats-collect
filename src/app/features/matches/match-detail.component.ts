@@ -15,7 +15,7 @@ import { CardModule } from 'primeng/card';
   template: `
     @if (match()) {
     <section>
-      <h2>Match contre <br>{{match().nomAdversaire}} <i class="fa fa-pencil link" aria-hidden="true" (click)="editMatch()"></i></h2>
+      <h2>Match contre <br>{{match().nomAdversaire}}</h2>
       <div class="match-info" aria-label="Informations du match">
         <div>Saison : {{ match().saison }} · Lieu : {{ match().lieu || 'Non renseigné' }}</div>
         <div>Date : {{ match().date | date:'yyyy/MM/dd' }}
@@ -28,16 +28,11 @@ import { CardModule } from 'primeng/card';
           @if (match().temps?.duree1ereMiTemps) { {{match().temps?.duree1ereMiTemps?.minute}}min }
           @if (match().temps?.duree2iemeMiTemps) { + {{match().temps?.duree2iemeMiTemps?.minute}}min }
         </div>
-        <!--
-        <div>debutMatch: {{match().temps?.debutMatch}}</div>
-        <div>fin1ereMiTemps: {{match().temps?.fin1ereMiTemps}}</div>
-        <div>debut2iemeMiTemps: {{match().temps?.debut2iemeMiTemps}}</div>
-        <div>finMatch: {{match().temps?.finMatch}}</div>
-        -->
         <div>Terrain : {{ match().terrain || 'Non renseigné' }} · Conditions : {{ match().conditions || 'Non renseignées' }}</div>
         @if (match().score) {
           <div>Score {{ match().temps?.finMatch ? 'final' : ' actuel'}} : {{ match().score?.nous ?? 0 }} - {{ match().score?.adversaire ?? 0}}</div>
         }
+        <div><i class="fa fa-pencil link" aria-hidden="true" (click)="editMatch()"></i></div>
       </div>
       <div class="match-timing-buttons">
         @if (!match().temps?.debutMatch) {

@@ -22,28 +22,33 @@ import { ConfirmationService } from 'primeng/api';
       <div class="teams-container">
         <div class="teams-grid">
           @for (team of visibleTeams(); track team.id) {
-            <p-card class="team-card" (click)="viewTeam(team)">
-              <ng-template pTemplate="header">
-                <div class="team-header-row">
+            <p-card styleClass="team-card" (click)="viewTeam(team)">
+              <div class="team-header-row">
                   <div class="team-info">
                     @if (team.logo) {
-                      <div class="logo">
-                        <img src={{team.logo}}/>
-                      </div>
+                      <div class="logo"><img src={{team.logo}}/></div>
                     }
-                    <div class="team-name">{{ team.nom }}</div>
+                    <div class="team-title">
+                      <div class="team-name">{{ team.nom }}</div>
+                      <div class="managers">
+                        <span class="managers-label">Managers :</span>
+                        <ul>
+                          @for (manager of managersFor(team); track manager) {
+                            <li>{{ manager }}</li>
+                          }
+                        </ul>
+                      </div>
+                    </div>
                   </div>
-                  <p-button
-                    icon="pi pi-trash"
-                    severity="danger"
-                    [text]="true"
-                    [rounded]="true"
-                    ariaLabel="Supprimer l'équipe"
-                    title="Supprimer l'équipe"
-                    (click)="deleteTeam(team, $event)">
-                  </p-button>
-                </div>
-              </ng-template>
+                  <div class="team-actions">
+                    <p-button icon="pi pi-pencil" styleClass="team-action-button" severity="info" [text]="true" [rounded]="true"
+                      ariaLabel="Modifier l'équipe" title="Modifier l'équipe" (click)="editTeam(team, $event)">
+                    </p-button>
+                    <p-button icon="pi pi-trash" styleClass="team-action-button" severity="danger" [text]="true" [rounded]="true"
+                      ariaLabel="Supprimer l'équipe" title="Supprimer l'équipe" (click)="deleteTeam(team, $event)">
+                    </p-button>
+                  </div>
+              </div>
             </p-card>
           } @empty {
            <p>Vous ne gérez aucune équipe pour l'instant. <br>Utiliser le bouton + en bas à droite pour ajouter une nouvelle équipe à gérer.</p>
@@ -77,10 +82,13 @@ import { ConfirmationService } from 'primeng/api';
       font-size: 1.4rem;
       margin-left: 20px;
     }
+    .team-title {
+      min-width: 0;
+    }
     .team-header-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      position: relative;
       width: 100%;
       gap: 10px;
     }
@@ -88,6 +96,21 @@ import { ConfirmationService } from 'primeng/api';
       display: flex;
       align-items: center;
       gap: 20px;
+      padding-right: 90px;
+    }
+    .team-actions {
+      display: flex;
+      align-items: center;
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+    :host ::ng-deep .team-action-button {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+    :host ::ng-deep .team-action-button .p-button-icon {
+      font-size: 1.35rem;
     }
     .team-card .p-card-header {
       display: flex;
@@ -95,9 +118,25 @@ import { ConfirmationService } from 'primeng/api';
       justify-content: space-between;
       gap: 10px;
     }
+    .team-card {
+      width: 500px;
+      padding: 10px;
+      cursor: pointer;
+      margin: 20px auto;
+    }
+    .managers {
+      margin-top: 12px;
+    }
+    .managers-label {
+      font-weight: 600;
+    }
+    .managers ul {
+      margin: 6px 0 0;
+      padding-left: 20px;
+    }
     .logo img {
-      max-width: 100px;
-      max-height: 100px;
+      max-width: 150px;
+      max-height: 150px;
     }
 
     `]
@@ -115,12 +154,21 @@ export class TeamListComponent {
     return teams.filter(team => !deletedIds.has(team.id));
   });
 
+  managersFor(team: Equipe): string[] {
+    return team.managerIds;
+  }
+
   viewTeam(team: Equipe) {
     this.router.navigate(['/app/teams', team.id]);
   }
 
   createTeam() {
     this.router.navigate(['/app/teams/new']);
+  }
+
+  editTeam(team: Equipe, event: Event) {
+    event.stopPropagation();
+    this.router.navigate(['/app/teams', team.id, 'edit']);
   }
 
   deleteTeam(team: Equipe, event: Event) {

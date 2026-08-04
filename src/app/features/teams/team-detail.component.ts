@@ -23,11 +23,10 @@ import { TeamService } from '@core/services/team.service';
           <div class="logo"><img src={{team()?.logo}}/></div>
         }
         <h2>
-          <span>{{ team()?.nom }}</span>
-          <i class="fa fa-pencil link" aria-hidden="true" (click)="editTeam()"></i>
+          Match des <span>{{ team()?.nom }}</span>
+          <div><i class="fa fa-pencil link" aria-hidden="true" (click)="editTeam()"></i></div>
         </h2>
 
-        <h3>Matchs</h3>
         <div class="season-selector">
           <label for="season">Saison</label>
           <p-select
@@ -41,12 +40,13 @@ import { TeamService } from '@core/services/team.service';
         
         <div class="matches-list">
           @for(match of matches() | async; track match.id) {  
-            <p-card (click)="viewMatch(match)">
+            <p-card styleClass="match-card" (click)="viewMatch(match)">
               <div class="match-row">
                 <div class="match-content">
-              {{ match.date | date:'yyyy/MM/dd' }} {{ match.temps?.debutMatch| date:'HH:mm' }} vs {{ match.nomAdversaire }} à {{match.lieu}}
+              <strong>{{ match.date | date:'yyyy/MM/dd' }} {{ match.temps?.debutMatch| date:'HH:mm' }} vs {{ match.nomAdversaire }} </strong>
+              <div>à {{match.lieu}}</div>
               @if (match.temps?.finMatch) {
-                <p>Terminé à {{match.temps!.finMatch }} sur 
+                <p>Terminé à {{match.temps!.finMatch | date:'HH:mm' }} sur 
                   {{ match.score!.nous > match.score!.adversaire 
                     ? "une victoire" : 
                       match.score!.nous < match.score!.adversaire 
@@ -55,15 +55,14 @@ import { TeamService } from '@core/services/team.service';
                   {{ match.score!.nous }}-{{ match.score!.adversaire }}</p>
               }
               </div>
-                <p-button
-                  icon="pi pi-trash"
-                  severity="danger"
-                  [text]="true"
-                  [rounded]="true"
-                  ariaLabel="Supprimer le match"
-                  title="Supprimer le match"
-                  (click)="deleteMatch(match, $event)">
-                </p-button>
+                <div class="match-actions">
+                  <p-button icon="pi pi-pencil" styleClass="match-action-button" severity="info" [text]="true" [rounded]="true"
+                    ariaLabel="Modifier le match" title="Modifier le match" (click)="editMatch(match, $event)">
+                  </p-button>
+                  <p-button icon="pi pi-trash" styleClass="match-action-button" severity="danger" [text]="true" [rounded]="true"
+                    ariaLabel="Supprimer le match" title="Supprimer le match" (click)="deleteMatch(match, $event)">
+                  </p-button>
+                </div>
               </div>
             </p-card>
           } @empty {
@@ -83,9 +82,10 @@ import { TeamService } from '@core/services/team.service';
       margin-bottom: 10px;
     }
     .season-selector {
-      margin: 0 0 20px;
+      margin: 30px 0 20px;
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 10px;
     }
     .season-selector label {
@@ -106,11 +106,32 @@ import { TeamService } from '@core/services/team.service';
     .match-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      position: relative;
       gap: 10px;
     }
     .match-content {
       flex: 1;
+      padding-right: 90px;
+    }
+    .matches-list {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .match-card {
+      width: 100%;
+      max-width: 500px;
+      cursor: pointer;
+    }
+    .match-actions {
+      position: absolute;
+      top: 0;
+      right: 0;
+      display: flex;
+    }
+    :host ::ng-deep .match-action-button .p-button-icon {
+      font-size: 1.35rem;
     }
     .buttons {
       position: absolute;
@@ -183,6 +204,10 @@ export class TeamDetailComponent implements OnInit {
         { queryParams: { saison: this.season() } }
       );
     }
+  }
+  editMatch(match: Match, event: Event) {
+    event.stopPropagation();
+    this.router.navigate(['/app/match', match.id, 'edit']);
   }
   editTeam() {
     const t = this.team();
