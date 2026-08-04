@@ -1,4 +1,4 @@
-rules_version = '3';
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -53,8 +53,7 @@ service cloud.firestore {
       allow create: if isCurrentManager(request.resource.data.managerId)
         && managesTeam(request.resource.data.equipeId);
       allow update, delete: if isCurrentManager(resource.data.managerId)
-        && request.resource.data.managerId == resource.data.managerId
-        && request.resource.data.equipeId == resource.data.equipeId;
+        && request.resource.data.managerId == resource.data.managerId;
     }
 
     match /Evenement/{eventId} {

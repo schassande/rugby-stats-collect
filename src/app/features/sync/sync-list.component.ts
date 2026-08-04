@@ -30,9 +30,10 @@ import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
             <a  href="" (click)="goToOnlineAuthentication($event)">Aller à la page de connexion</a>
           </div>
         </div>
-      } @else if (isSyncing()) {
-        <p>Envoi des données en cours: {{syncDone()}}/{{syncTarget()}}
       } @else {
+        @if (isSyncing()) {
+          <p>Envoi des données en cours: {{syncDone()}}/{{syncTarget()}}</p>
+        }
         <h3>Les données en locales ({{nbSyncs()}})</h3>
           <div class="buttons-panel">
             <p-select [options]="statusOptions" [ngModel]="selectedStatus()"
@@ -63,7 +64,6 @@ import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
               </div>
             }
           </div>
-
         <h3>Les données sur le serveur</h3>
         <div class="sync-actions">
           <p-button label="Récupérer mes equipes" icon="fa fa-download" [loading]="isSyncing()"
@@ -71,6 +71,9 @@ import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
           <p-button label="Récupérer les matches de mes équipes" icon="fa fa-download" [loading]="isSyncing()"
               [disabled]="isSyncing()" (onClick)="recupererMesMatches()" class="sync-button"></p-button>
         </div>
+        @if (downloadResult()) {
+          <p class="download-result" aria-live="polite">{{ downloadResult() }}</p>
+        }
       }
     </section>
     <p-confirmdialog></p-confirmdialog>
@@ -90,6 +93,7 @@ import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
       padding: .75rem; border: 1px solid var(--p-surface-300); border-radius: var(--p-border-radius-md);
       background: var(--p-surface-0); }
     .sync-actions { display: flex; align-items: center; gap: .25rem; }
+    .download-result { margin: 1rem 0; }
     .offline-message { max-width: 600px; margin: 2rem auto; text-align: center; }
     .offline-message a { color: var(--p-primary-color); cursor: pointer; }
   `
@@ -118,6 +122,7 @@ export class SyncListComponent implements OnInit {
   readonly syncTarget = signal<number>(0);
   readonly checkingFirebaseAuth = signal(true);
   readonly firebaseConnected = signal(false);
+  readonly downloadResult = signal<string | null>(null);
 
   statusLabel(status: SyncActionStatus): string {
     return this.statusOptions.find(option => option.value === status)?.label ?? status;
@@ -211,7 +216,8 @@ export class SyncListComponent implements OnInit {
     if (this.isSyncing()) return;
     this.isSyncing.set(true);
     try {
-      await this.syncService.chargerMesEquipes();
+      const equipes = await this.syncService.chargerMesEquipes();
+      this.downloadResult.set(`${equipes.length} équipe${equipes.length > 1 ? 's' : ''} téléchargée${equipes.length > 1 ? 's' : ''}.`);
     } finally {
       this.isSyncing.set(false);
     }
@@ -221,7 +227,8 @@ export class SyncListComponent implements OnInit {
     if (this.isSyncing()) return;
     this.isSyncing.set(true);
     try {
-      await this.syncService.chargerMatchesDeMesEquipes();
+      const nombreMatches = await this.syncService.chargerMatchesDeMesEquipes();
+      this.downloadResult.set(`${nombreMatches} match${nombreMatches > 1 ? 's' : ''} téléchargé${nombreMatches > 1 ? 's' : ''}.`);
     } finally {
       this.isSyncing.set(false);
     }

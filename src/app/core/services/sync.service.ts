@@ -119,23 +119,33 @@ export class SyncService {
   /**
    * Recherche puis stocke localement les matches de toutes les équipes dont je suis le manager.
    */
-  public async chargerMatchesDeMesEquipes(): Promise<void> {
+  public async chargerMatchesDeMesEquipes(): Promise<number> {
     const equipes = await this.chargerMesEquipes();
-    await Promise.all(equipes.map(equipe => this.chargerMatches(equipe)));
+    const resultats = await Promise.all(equipes.map(equipe => this.chargerMatches(equipe)));
+    return resultats.reduce((total, nombre) => total + nombre, 0);
   }
 
   /** 
    * Recherche dans la base de données firestore de toutes les matches d'une equipe. 
    * Puis stockage dans la base locale
    */
-  public async chargerMatches(equipe: Equipe) {
+  public async chargerMatches(equipe: Equipe): Promise<number> {
+    const manager = this.authService.getCurrentManager();
+    if (!manager) {
+      return 0;
+    }
     const q = query(
       collection(firestoreDatabase!, SyncService.COLLECTIION_MATCH),
-      where('equipeId', '==', equipe.id)
+      // La règle Firestore autorise uniquement les matches dont le managerId
+      // correspond à l'utilisateur courant. Ce filtre est donc nécessaire
+      // pour que Firestore puisse valider la requête avant son exécution.
+      where('equipeId', '==', equipe.id),
+      where('managerId', '==', manager.id)
     );
     const snapshot = await getDocs(q);
     const objs = snapshot.docs.map(d => d.data() as Match);
     await this.databaseService.importMatches(objs);
+    return objs.length;
   }
 
   /** 
