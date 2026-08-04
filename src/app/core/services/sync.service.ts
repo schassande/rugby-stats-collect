@@ -16,8 +16,20 @@ export class SyncService {
   private static readonly COLLECTIION_MATCH: SyncObjectType = 'Match';
   private static readonly COLLECTIION_EVENEMENT: SyncObjectType = 'Evenement';
 
-
-
+  private static readonly PRIORITE_COLLECTION = [
+    SyncService.COLLECTIION_EQUIPE,
+    SyncService.COLLECTIION_MATCH,
+    SyncService.COLLECTIION_EVENEMENT
+  ];
+  public sortSyncs(syncs: SyncAction[]): SyncAction[] {
+    return [...syncs].sort((s1, s2) => {
+      const idx1 = SyncService.PRIORITE_COLLECTION.indexOf(s1.objectType);
+      const idx2 = SyncService.PRIORITE_COLLECTION.indexOf(s2.objectType);
+      let res = idx1 - idx2;
+      if (res !== 0) return res;
+      return new Date(s1.createdAt).getTime() - new Date(s2.createdAt).getTime();
+    });
+  }
   /**
    * Synchronisation vers Firestore de toutes les données pending dans la base local.
    */

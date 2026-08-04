@@ -17,45 +17,45 @@ import { SyncAction, SyncActionStatus } from '@core/models/datamodel';
   template: `
     <section class="sync-page">
       <h2>Synchronisations Local / Serveur </h2>
-      <h3>Les données en locales ({{nbSyncs()}})</h3>
       @if (isSyncing()) {
         <p>Envoi des données en cours: {{syncDone()}}/{{syncTarget()}}
       } @else {
-        <div class="buttons-panel">
-          <p-select [options]="statusOptions" [ngModel]="selectedStatus()"
-            (ngModelChange)="loadSyncs($event)"
-            optionLabel="label" optionValue="value" placeholder="Filtrer par statut"
-            ariaLabel="Filtrer les synchronisations par statut" class="status-filter"></p-select>
-          <p-button label="Envoyer la sélection" icon="pi pi-refresh" [loading]="isSyncing()"
-            [disabled]="isSyncing() || nbSyncs() == 0" (onClick)="synchronize()" class="sync-button"></p-button>
-          <p-button label="Supprimer les synchronisations terminées" icon="fa fa-trash"
-            severity="danger" [outlined]="true" [disabled]="isSyncing()"
-            (onClick)="deleteSynced()" class="sync-button"></p-button>
-        </div>
-        <div class="sync-list" aria-live="polite">
-          @for (sync of syncs(); track sync.id) {
-            <div class="sync-item">
-              <span>{{ sync.objectType }}</span>
-              <span>{{ sync.objectId }}</span>
-              <span>{{ sync.actionType }}</span>
-              <span>{{ statusLabel(sync.status) }}</span>
-              <div class="sync-actions">
-                <p-button icon="fa fa-refresh" severity="primary" [text]="true" [rounded]="true"
-                  [disabled]="isSyncing()" ariaLabel="Synchroniser cette ligne" title="Synchroniser cette ligne"
-                  (click)="synchronizeOne(sync, $event)"></p-button>
-                <p-button icon="fa fa-trash" severity="danger" [text]="true" [rounded]="true"
-                  [disabled]="isSyncing()" ariaLabel="Supprimer la synchronisation" title="Supprimer la synchronisation"
-                  (click)="deleteSync(sync, $event)"></p-button>
+        <h3>Les données en locales ({{nbSyncs()}})</h3>
+          <div class="buttons-panel">
+            <p-select [options]="statusOptions" [ngModel]="selectedStatus()"
+              (ngModelChange)="loadSyncs($event)"
+              optionLabel="label" optionValue="value" placeholder="Filtrer par statut"
+              ariaLabel="Filtrer les synchronisations par statut" class="status-filter"></p-select>
+            <p-button label="Envoyer la sélection" icon="fa fa-paper-plane" [loading]="isSyncing()"
+              [disabled]="isSyncing() || nbSyncs() == 0" (onClick)="synchronize()" class="sync-button"></p-button>
+            <p-button label="Supprimer les synchronisations terminées" icon="fa fa-trash"
+              severity="danger" [outlined]="true" [disabled]="isSyncing()"
+              (onClick)="deleteSynced()" class="sync-button"></p-button>
+          </div>
+          <div class="sync-list" aria-live="polite">
+            @for (sync of syncs(); track sync.id) {
+              <div class="sync-item">
+                <span>{{ sync.objectType }}</span>
+                <span>{{ sync.objectId }}</span>
+                <span>{{ sync.actionType }}</span>
+                <span>{{ statusLabel(sync.status) }}</span>
+                <div class="sync-actions">
+                  <p-button icon="fa fa-paper-plane" severity="primary" [text]="true" [rounded]="true"
+                    [disabled]="isSyncing()" ariaLabel="Synchroniser cette ligne" label="Synchroniser cette ligne"
+                    (click)="synchronizeOne(sync, $event)"></p-button>
+                  <p-button icon="fa fa-trash" severity="danger" [text]="true" [rounded]="true"
+                    [disabled]="isSyncing()" ariaLabel="Supprimer la synchronisation" title="Supprimer la synchronisation"
+                    (click)="deleteSync(sync, $event)"></p-button>
+                </div>
               </div>
-            </div>
-          }
+            }
+          </div>
+        <h3>Les données sur le serveur</h3>
+        <div class="sync-actions">
+          <p-button label="Récupérer mes equipes" icon="fa fa-download" [loading]="isSyncing()"
+              [disabled]="isSyncing()" (onClick)="recupererMesEquieps()" class="sync-button"></p-button>
         </div>
       }
-      <h3>Les données sur le serveur</h3>
-      <div class="sync-actions">
-        <p-button label="Récupérer mes equipes" icon="fa fa-downlaod" [loading]="isSyncing()"
-            [disabled]="isSyncing()" (onClick)="recupererMesEquieps()" class="sync-button"></p-button>
-      </div>
     </section>
     <p-confirmdialog></p-confirmdialog>
   `,
@@ -107,7 +107,7 @@ export class SyncListComponent implements OnInit {
 
   async loadSyncs(status: SyncActionStatus | undefined): Promise<void> {
     this.selectedStatus.set(status);
-    this.syncs.set(await this.databaseService.getSyncs(status));
+    this.syncs.set(this.syncService.sortSyncs(await this.databaseService.getSyncs(status)));
   }
 
   deleteSync(sync: SyncAction, event: Event): void {
@@ -161,7 +161,7 @@ export class SyncListComponent implements OnInit {
       this.syncTarget.set(this.syncs().length);
       this.syncDone.set(0);
       await Promise.all(
-        this.syncs().map((sync) => 
+        this.syncService.sortSyncs(this.syncs()).map((sync) => 
           this.syncService.upload(sync)
             .then(()=> this.syncDone.update(v=>v+1)))
       );
