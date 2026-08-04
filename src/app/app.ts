@@ -20,7 +20,7 @@ import { DatabaseService } from '@core/services/database.service';
         </div>
         @if (user()) {
           <div class="user-info">
-            Connecté : {{ user()?.prenom }} {{ user()?.nom }}
+            Connecté : {{ user()?.prenom }} {{ user()?.nom }} ({{auth.getAuthMode() === 'firebase' ? 'en ligne' : 'local'}})
           </div>
           <nav class="tab-bar" aria-label="Navigation principale">
             <a routerLink="/app/welcome" routerLinkActive="active" class="tab-item">
@@ -153,7 +153,7 @@ import { DatabaseService } from '@core/services/database.service';
 })
 export class App {
   private readonly databaseService = inject(DatabaseService);
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly teamService = inject(TeamService);
   private readonly matchService = inject(MatchService);
   private readonly router = inject(Router);
