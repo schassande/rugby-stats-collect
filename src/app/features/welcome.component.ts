@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
   imports: [ButtonModule],
   template: `
     <section>
+      <img class="app-icon" src="/icons/icon-384x384.png" alt="Icône RugbyStats">
       <h2>Bienvenue</h2>
 
       <p>RugbyStats permet de collecter les statistiques des matchs de rugby de vos équipes.</p>
@@ -70,6 +71,13 @@ import { Router } from '@angular/router';
     h2 {
       text-align: center;
       margin: 10px 0;
+    }
+    .app-icon {
+      display: block;
+      width: 300px;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto 1rem;
     }
     p {
       margin: 10px 0;
