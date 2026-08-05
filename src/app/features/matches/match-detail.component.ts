@@ -50,7 +50,7 @@ import { MatchDashboardComponent } from './match-dashboard.component';
       <h3>Vue synthétique</h3>
       <app-match-dashboard [team]="team()" [match]="match()" [events]="events()" />
 
-      <h3>Liste des événements</h3>
+      <h3>Chronologie des événements</h3>
       <div class="events-list">
         <div class="event-list-header">
           <div class="column-NOUS-header"><strong>Nous</strong></div>
