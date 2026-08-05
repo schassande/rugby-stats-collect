@@ -1,8 +1,13 @@
 
+WIP
+- Déploiement avec nom de domaine rugbystat.chassande.fr: 
+  - déploiement ok. 
+  - nom de domaine configuré. 
+  - Attente du certificat pour https.
+
 TODO list
 - tester la creation de compte normal (pas google) + authentification
 - Réinitialisation de mot de passe
-- Déploiement avec nom de domaine rugbystat.chassande.fr
 - Tester sur telephone dont le mode local
 
 DONE
