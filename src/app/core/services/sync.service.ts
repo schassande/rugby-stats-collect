@@ -1,13 +1,20 @@
 import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { Equipe, Evenement, Match, Saisons, SyncAction, SyncObjectType } from '@core/models/datamodel';
+import {
+  Equipe,
+  Evenement,
+  Match,
+  Saisons,
+  SyncAction,
+  SyncObjectType,
+} from '@core/models/datamodel';
 import { DatabaseService } from '@core/services/database.service';
 import { AuthService } from './auth.service';
 import { auth, db as firestoreDatabase } from '../config/firebase.config';
 import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SyncService {
   private readonly databaseService = inject(DatabaseService);
@@ -19,7 +26,7 @@ export class SyncService {
   private static readonly PRIORITE_COLLECTION = [
     SyncService.COLLECTIION_EQUIPE,
     SyncService.COLLECTIION_MATCH,
-    SyncService.COLLECTIION_EVENEMENT
+    SyncService.COLLECTIION_EVENEMENT,
   ];
   public sortSyncs(syncs: SyncAction[]): SyncAction[] {
     return [...syncs].sort((s1, s2) => {
@@ -51,19 +58,23 @@ export class SyncService {
     // recuperation de l'objet dans la base locale
     let obj;
     if (sync.actionType !== 'delete') {
-      switch(sync.objectType) {
-      case 'Equipe': 
-        obj = await this.databaseService.getTeam(sync.objectId);
-        break;
-      case 'Match':
-        obj = await this.databaseService.getMatch(sync.objectId);
-        break;
-      case 'Evenement':
-        obj = await this.databaseService.getEvent(sync.objectId);
-        break;
+      switch (sync.objectType) {
+        case 'Equipe':
+          obj = await this.databaseService.getTeam(sync.objectId);
+          break;
+        case 'Match':
+          obj = await this.databaseService.getMatch(sync.objectId);
+          break;
+        case 'Evenement':
+          obj = await this.databaseService.getEvent(sync.objectId);
+          break;
       }
       if (!obj) {
-        console.error('Upload impossible car l objet n existe pas dans la base locale', sync.objectType, sync.objectId);
+        console.error(
+          'Upload impossible car l objet n existe pas dans la base locale',
+          sync.objectType,
+          sync.objectId,
+        );
         sync.status = 'failed';
         await this.databaseService.updateSync(sync);
         return;
@@ -71,34 +82,40 @@ export class SyncService {
     }
     console.debug('uploadChecked: ', sync, obj);
     try {
-      switch(sync.actionType) {
-        case 'create' : 
+      switch (sync.actionType) {
+        case 'create':
           console.debug('Insertion dans firestore', sync.objectType, sync.objectId);
-          await setDoc(doc(firestoreDatabase!, sync.objectType, ''+sync.objectId), obj);
+          await setDoc(doc(firestoreDatabase!, sync.objectType, '' + sync.objectId), obj);
           break;
 
-        case 'update' : 
+        case 'update':
           console.debug('Mise à jour dans firestore', sync.objectType, sync.objectId);
-          await setDoc(doc(firestoreDatabase!, sync.objectType, ''+sync.objectId), obj);
+          await setDoc(doc(firestoreDatabase!, sync.objectType, '' + sync.objectId), obj);
           break;
-        case 'delete' : 
+        case 'delete':
           console.debug('Suppression dans firestore', sync.objectType, sync.objectId);
-          const docRef = doc(firestoreDatabase!, sync.objectType, ''+sync.objectId);
+          const docRef = doc(firestoreDatabase!, sync.objectType, '' + sync.objectId);
           await deleteDoc(docRef);
           break;
       }
       sync.status = 'synced';
     } catch (error) {
-      console.error('Erreur durant l upload sur firestore', sync.objectType, sync.objectId, error, obj);
-      sync.error = error as string + '\n' + JSON.stringify(obj, null, 2);
+      console.error(
+        'Erreur durant l upload sur firestore',
+        sync.objectType,
+        sync.objectId,
+        error,
+        obj,
+      );
+      sync.error = (error as string) + '\n' + JSON.stringify(obj, null, 2);
       sync.status = 'failed';
     }
     console.debug('Mise à jour la synchronisation pour l objet', sync.objectType, sync.objectId);
     await this.databaseService.updateSync(sync);
   }
 
-  /** 
-   * Recherche dans la base de données firestore de toutes les équipes dont je suis le manager. 
+  /**
+   * Recherche dans la base de données firestore de toutes les équipes dont je suis le manager.
    * Puis stockage dans la base locale
    */
   public async chargerMesEquipes(): Promise<Equipe[]> {
@@ -108,11 +125,18 @@ export class SyncService {
     }
     const q = query(
       collection(firestoreDatabase!, SyncService.COLLECTIION_EQUIPE),
-      where('managerIds', 'array-contains', manager.id)
+      where('managerIds', 'array-contains', manager.id),
     );
     const snapshot = await getDocs(q);
-    const objs = snapshot.docs.map(d => d.data() as Equipe);
-    await this.databaseService.importTeams(objs);
+    const objs = snapshot.docs.map((d) => d.data() as Equipe);
+    const missing = (
+      await Promise.all(
+        objs.map(async (team) =>
+          (await this.databaseService.getTeam(team.id)) ? undefined : team,
+        ),
+      )
+    ).filter((team): team is Equipe => !!team);
+    await this.databaseService.importTeams(missing);
     return objs;
   }
 
@@ -121,12 +145,12 @@ export class SyncService {
    */
   public async chargerMatchesDeMesEquipes(): Promise<number> {
     const equipes = await this.chargerMesEquipes();
-    const resultats = await Promise.all(equipes.map(equipe => this.chargerMatches(equipe)));
+    const resultats = await Promise.all(equipes.map((equipe) => this.chargerMatches(equipe)));
     return resultats.reduce((total, nombre) => total + nombre, 0);
   }
 
-  /** 
-   * Recherche dans la base de données firestore de toutes les matches d'une equipe. 
+  /**
+   * Recherche dans la base de données firestore de toutes les matches d'une equipe.
    * Puis stockage dans la base locale
    */
   public async chargerMatches(equipe: Equipe): Promise<number> {
@@ -140,25 +164,25 @@ export class SyncService {
       // correspond à l'utilisateur courant. Ce filtre est donc nécessaire
       // pour que Firestore puisse valider la requête avant son exécution.
       where('equipeId', '==', equipe.id),
-      where('managerId', '==', manager.id)
+      where('managerId', '==', manager.id),
     );
     const snapshot = await getDocs(q);
-    const objs = snapshot.docs.map(d => d.data() as Match);
+    const objs = snapshot.docs.map((d) => d.data() as Match);
     await this.databaseService.importMatches(objs);
     return objs.length;
   }
 
-  /** 
-   * Recherche dans la base de données firestore de toutes les événements d'une match. 
+  /**
+   * Recherche dans la base de données firestore de toutes les événements d'une match.
    * Puis stockage dans la base locale
    */
   public async chargerEvenements(match: Match) {
     const q = query(
       collection(firestoreDatabase!, SyncService.COLLECTIION_EVENEMENT),
-      where('match', '==', match.id)
+      where('match', '==', match.id),
     );
     const snapshot = await getDocs(q);
-    const objs = snapshot.docs.map(d => d.data() as Evenement);
+    const objs = snapshot.docs.map((d) => d.data() as Evenement);
     await this.databaseService.importEvents(objs);
   }
 }

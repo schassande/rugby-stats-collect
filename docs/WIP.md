@@ -1,7 +1,5 @@
 
 TODO list
-- Télécharger en local les matches et en options les événements : BUG Permission
-- tester la synchro lorsque connecté local
 - Export Excel d'un match ou de tous les matches d'une équipe
 - déploiement avec nom de domaine rugbystat.chassande.fr
 - tester sur telephone dont le mode local
@@ -13,3 +11,5 @@ DONE
 - Calculer les temps des evenements par rapport au début du match/debut 2ieme mi-temps
 - Dans la page du match afficher un tableau comparatif des 2 équipes par mi-temps. une ligne par catégorie
 - Authentification automatique en local
+- tester la synchro lorsque connecté local
+- Télécharger en local les matches et en options les événements 

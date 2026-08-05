@@ -1,0 +1,73 @@
+<section class="sync-page">
+  <h2>Synchronisation des données</h2>
+  <div class="team-controls">
+    <p-select class="team-select" [options]="teams()" optionLabel="nom"
+      optionValue="id" [ngModel]="selected()"
+      (ngModelChange)="selected.set($event); reload()"
+      placeholder="Choisir une équipe"
+    />
+    <p-button label="Télécharger mes équipes" icon="pi pi-download"
+      (onClick)="loadTeams()" [disabled]="busy()"
+    />
+  </div>
+  @if (teams().length === 0) {
+    <p-message severity="info"
+      text="Aucune équipe locale. Téléchargez les équipes que vous gérez."
+    />
+  }
+  @if (error()) {
+    <p-message severity="error" [text]="error()!" /><p-button
+      label="Réessayer" (onClick)="reload()"
+    />
+  }
+  <p-table [value]="rows()" [loading]="loading()">
+    <ng-template #header>
+      <tr>
+        <th>Match</th>
+        <th>Local</th>
+        <th>Serveur</th>
+        <th>Actions</th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-row>
+      <tr>
+        <td>
+          <div>{{ row.match.date | date: 'yyyy/MM/dd' }}</div>
+          <div>{{ row.match.nomAdversaire }}</div>
+        </td>
+        <td class="cell-data">
+          <span class="match-check">{{ row.local ? '✓' : '—' }}</span>
+          <span class="event-count">({{ row.localEvents.length }})</span>
+        </td>
+        <td class="cell-data">
+          <span class="match-check">{{ row.remote ? '✓' : '—' }}</span>
+          <span class="event-count">({{ row.remoteEvents.length }})</span>
+        </td>
+        <td>
+          @if (row.conflict) {
+            {{ row.conflict }}
+          } @else if (row.availableAction === 'download') {
+            <p-button label="Télécharger" (onClick)="download(row)" />
+          } @else if (row.availableAction === 'delete') {
+            <p-button label="Supprimer localement" severity="warn" (onClick)="delete(row)" />
+          } @else if (row.availableAction === 'send') {
+            <p-button label="Envoyer" (onClick)="run(() => service.retry(action(row)!))" />
+          } @else if (row.availableAction === 'retry') {
+            <p-button label="Réessayer" (onClick)="retry(row)" />
+          } @else {
+            Synchronisation en cours
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+  @if (selected()) {
+    <div class="send-actions">
+      <p-button label="Envoyer les données en attente" icon="pi pi-upload"
+        (onClick)="send()" [disabled]="busy()"/>
+    </div>
+  }
+  <p-dialog [visible]="busy()" [modal]="true" [closable]="false" [showHeader]="false">
+    <i class="pi pi-spin pi-spinner"></i> Opération en cours…
+  </p-dialog>
+</section>
