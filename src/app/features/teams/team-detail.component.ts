@@ -10,11 +10,13 @@ import { SelectModule } from 'primeng/select';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { TeamService } from '@core/services/team.service';
+import { ExportExcelService } from '@core/services/export-excel.service';
+import { CheckboxModule } from 'primeng/checkbox';
 
 @Component({
   selector: 'app-team-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, CardModule, ButtonModule, SelectModule, ConfirmDialogModule],
+  imports: [CommonModule, FormsModule, CardModule, ButtonModule, SelectModule, CheckboxModule, ConfirmDialogModule],
   providers: [ConfirmationService],
   template: `
     @if (team()) {
@@ -40,8 +42,14 @@ import { TeamService } from '@core/services/team.service';
         
         <div class="matches-list">
           @for(match of matches() | async; track match.id) {  
-            <p-card styleClass="match-card" (click)="viewMatch(match)">
-              <div class="match-row">
+            <div class="match-card-container">
+              @if (multipleExport()) {
+                <p-checkbox [binary]="true" [ngModel]="isSelected(match.id)"
+                  (ngModelChange)="toggleMatch(match.id, $event)"
+                  (click)="$event.stopPropagation()" />
+              }
+              <p-card styleClass="match-card" (click)="viewMatch(match)">
+                <div class="match-row">
                 <div class="match-content">
               <strong>{{ match.date | date:'yyyy/MM/dd' }} {{ match.temps?.debutMatch| date:'HH:mm' }} vs {{ match.nomAdversaire }} </strong>
               <div>à {{match.lieu}}</div>
@@ -62,12 +70,24 @@ import { TeamService } from '@core/services/team.service';
                   <p-button icon="pi pi-trash" styleClass="match-action-button" severity="danger" [text]="true" [rounded]="true"
                     ariaLabel="Supprimer le match" title="Supprimer le match" (click)="deleteMatch(match, $event)">
                   </p-button>
+                  <p-button icon="pi pi-file-excel" styleClass="match-action-button" severity="success" [text]="true" [rounded]="true"
+                    ariaLabel="Exporter ce match" title="Exporter ce match" [loading]="exporting()" [disabled]="exporting()" (click)="exportOne(match, $event)">
+                  </p-button>
                 </div>
-              </div>
-            </p-card>
+                </div>
+              </p-card>
+            </div>
           } @empty {
            <p>Aucun match pour la saison {{season()}}. Cliquer sur le bouton + pour en ajoutant un.</p>
           }
+        </div>
+        <div class="export-actions">
+          <div class="multiple-export-toggle">
+            <p-checkbox inputId="multiple-export" [binary]="true" [ngModel]="multipleExport()" (ngModelChange)="setMultipleExport($event)" />
+            <label for="multiple-export">Export Excel multiple</label>
+          </div>
+          <p-button [label]="allSelected() ? 'Désélectionner tous' : 'Sélectionner tous'" (click)="toggleAll()" [disabled]="!multipleExport() || exporting()" />
+          <p-button [label]="'Exporter ' + selectedIds().size + ' match' + (selectedIds().size > 1 ? 's' : '')" [disabled]="!multipleExport() || !selectedIds().size || exporting()" [loading]="exporting()" (click)="exportMany()" />
         </div>
         <div class="buttons">
           <p-button icon="pi pi-plus" rounded="true" size="large" severity="success" (click)="createMatch()"></p-button>
@@ -120,15 +140,38 @@ import { TeamService } from '@core/services/team.service';
       gap: 12px;
     }
     .match-card {
-      width: 100%;
+      flex: 1;
       max-width: 500px;
       cursor: pointer;
+    }
+    .match-card-container {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 540px;
+      gap: 12px;
     }
     .match-actions {
       position: absolute;
       top: 0;
       right: 0;
       display: flex;
+    }
+    .export-actions {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .multiple-export-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .multiple-export-toggle label {
+      cursor: pointer;
     }
     :host ::ng-deep .match-action-button .p-button-icon {
       font-size: 1.35rem;
@@ -153,17 +196,26 @@ export class TeamDetailComponent implements OnInit {
   private db = inject(DatabaseService);
   private teamService = inject(TeamService);
   private confirmationService = inject(ConfirmationService);
+  private exportService = inject(ExportExcelService);
 
-  team = signal<Equipe|undefined>(undefined);
-  season = signal<Saison|undefined>(undefined);
+  team = signal<Equipe | undefined>(undefined);
+  season = signal<Saison | undefined>(undefined);
   private readonly matchesRefresh = signal(0);
-  matches =  computed(async () => {
+  readonly multipleExport = signal(false);
+  readonly selectedIds = signal<Set<string>>(new Set());
+  readonly matchCount = signal(0);
+  readonly exporting = signal(false);
+  matches = computed(async () => {
     this.matchesRefresh();
-    const t = this.team()
+    const t = this.team();
     const s = this.season();
-    return t && s ? await this.db.getMatchesByTeamNSeason(t.id, s) : [];
+    const result = t && s ? await this.db.getMatchesByTeamNSeason(t.id, s) : [];
+    this.matchCount.set(result.length);
+    this.selectedIds.set(new Set());
+    return result;
   });
 
+  /** Charge l’équipe et la saison affichées par la route courante. */
   async ngOnInit() {
     this.season.set(this.teamService.currentSeason());
     const teamId = this.route.snapshot.paramMap.get('teamId');
@@ -174,6 +226,61 @@ export class TeamDetailComponent implements OnInit {
       return;
     }
     this.teamService.setCurrentTeam(this.team());
+  }
+
+  /** Active ou désactive le mode d’export multiple et réinitialise sa sélection. */
+  setMultipleExport(value: boolean) {
+    this.multipleExport.set(value);
+    if (!value) this.selectedIds.set(new Set());
+  }
+
+  /** Indique si un match est actuellement sélectionné pour l’export. */
+  isSelected(id: string): boolean {
+    return this.selectedIds().has(id);
+  }
+
+  /** Ajoute ou retire un match de la sélection d’export. */
+  toggleMatch(id: string, checked: boolean): void {
+    const next = new Set(this.selectedIds());
+    checked ? next.add(id) : next.delete(id);
+    this.selectedIds.set(next);
+  }
+
+  /** Sélectionne tous les matchs affichés ou les désélectionne s’ils le sont déjà tous. */
+  async toggleAll(): Promise<void> {
+    const list = await this.matches();
+    this.selectedIds.set(this.allSelected() ? new Set() : new Set(list.map((match) => match.id)));
+  }
+
+  /** Indique si tous les matchs de la liste courante sont sélectionnés. */
+  allSelected(): boolean {
+    return this.matchCount() > 0 && this.selectedIds().size === this.matchCount();
+  }
+
+  /** Exporte immédiatement un seul match depuis sa carte. */
+  async exportOne(match: Match, event: Event): Promise<void> {
+    event.stopPropagation();
+    await this.exportMatches([match]);
+  }
+
+  /** Exporte les matchs sélectionnés dans un fichier unique. */
+  async exportMany(): Promise<void> {
+    const ids = this.selectedIds();
+    const matches = (await this.matches()).filter((match) => ids.has(match.id));
+    await this.exportMatches(matches);
+  }
+
+  /** Charge les événements locaux et délègue la génération du classeur au service. */
+  private async exportMatches(matches: Match[]): Promise<void> {
+    if (!matches.length || this.exporting()) return;
+
+    this.exporting.set(true);
+    try {
+      const events = (await Promise.all(matches.map((match) => this.db.getEventsByMatch(match.id)))).flat();
+      this.exportService.export(matches, events, this.team()!);
+    } finally {
+      this.exporting.set(false);
+    }
   }
 
   viewMatch(match: Match) {

@@ -52,14 +52,15 @@ Sous la liste des cartes de matchs, ajouter une zone d'actions contenant :
 - un bouton « Exporter [nombre] matchs ».
 
 Lorsque la checkbox « Export multiple » est cochée, une checkbox de sélection
-devient visible à gauche de chaque `p-card`. L'utilisateur peut alors
+devient visible à gauche, à l'extérieur de chaque `p-card`. L'utilisateur peut alors
 sélectionner les matchs à inclure dans le fichier.
 
 La liste des matchs n'est pas paginée. Le bouton « Sélectionner tous » agit
 donc sur l'ensemble des matchs correspondant au filtre de saison affiché.
 
-Le bouton « Sélectionner tous » est visible et actif uniquement en mode export
-multiple. Il coche en une seule action les checkboxes de tous les matchs de la
+Le bouton « Sélectionner tous » est toujours visible. Il est désactivé lorsque
+le mode export multiple n'est pas activé. En mode export multiple, il coche en
+une seule action les checkboxes de tous les matchs de la
 saison déjà sélectionnée ou affichée dans `team-detail`, correspondant au filtre actif, y compris ceux qui ne seraient
 pas actuellement visibles à l'écran, puis met à jour le compteur du bouton
 d'export. Il s'agit d'un raccourci d'interface équivalent au fait de cocher
@@ -73,7 +74,7 @@ libellé devient « Désélectionner tous » ; il permet alors de vider la séle
 en une seule action. Si au moins un match est désélectionné, le libellé revient
 à « Sélectionner tous ».
 
-Le bouton d'export multiple :
+Le bouton d'export multiple est toujours visible dans la zone d'actions :
 
 - affiche le nombre courant de matchs sélectionnés ;
 - est désactivé si le mode « Export multiple » n'est pas activé ;
@@ -82,7 +83,8 @@ Le bouton d'export multiple :
   leurs événements.
 
 Lorsque le mode multiple est désactivé, les checkboxes de sélection des cartes
-ne sont plus visibles et la sélection est réinitialisée. L'export simple de
+ne sont plus visibles, les boutons d'export multiple restent visibles mais
+désactivés, et la sélection est réinitialisée. L'export simple de
 chaque carte reste disponible quel que soit l'état du mode multiple.
 
 La sélection est également réinitialisée lorsqu'un filtre de saison est
@@ -123,7 +125,7 @@ matchs.
 
 ## Contenu du classeur
 
-Un export contient au minimum les feuilles suivantes.
+Un export contient les feuilles suivantes : `Matchs` et `Evenements`.
 
 ### Feuille `Matchs`
 
@@ -166,7 +168,24 @@ Une ligne par événement, avec les colonnes :
 | Équipe | `Evenement.equipe` |
 | Nature | `Evenement.nature` |
 | Type | `Evenement.type` |
-| Sous-type | `Evenement.sousType` |
+| Identifiant du rapporteur | `Evenement.rapporteurId` |
+| Complément discipline | `Evenement.complementDiscipline` |
+| Faute pénalité | `Evenement.fautesPenalite` |
+| Faute bras cassé | `Evenement.fautesBrasCasse` |
+| Numéro joueur 1 | `Evenement.numeroJoueur1` |
+| Numéro joueur 2 | `Evenement.numeroJoueur2` |
+| Zone lancée | `Evenement.zoneLancee` |
+| Zone terrain | `Evenement.zoneTerrain` |
+| Position largeur | `Evenement.positionLargeur` |
+| Choix de jeu pénalité | `Evenement.choixDeJeuPenalite` |
+| Choix de jeu bras cassé | `Evenement.choixDeJeuBrasCasse` |
+| Distance jeu au pied | `Evenement.distanceJeuPied` |
+| Résultat mêlée | `Evenement.resultatMelee` |
+| Résultat maul | `Evenement.resultatMaul` |
+| Résultat touche | `Evenement.resultatTouche` |
+| Résultat transformation | `Evenement.resultatTransformation` |
+| Résultat ruck | `Evenement.resultRuck` |
+| Récupération | `Evenement.recuperation` |
 | Résultat | `Evenement.resultat` |
 | Commentaire | `Evenement.commentaire` |
 
@@ -194,15 +213,12 @@ Excel, avec un format d'affichage explicite (`yyyy/mm/dd` ou
 lecture, leur tri et leur utilisation dans les formules Excel, indépendamment
 des paramètres régionaux de l'ordinateur. Les attributs absents restent vides.
 
-### Feuille `Synthese`
+### Feuille `Evenements` — attributs exportés
 
-Une feuille de synthèse regroupe par match, équipe et nature/type le nombre
-d'événements exportés. Elle contient notamment : `Match`, `Adversaire`,
-`Équipe`, `Nature`, `Type`, `Nombre`.
-
-Les natures et types sans occurrence ne sont pas ajoutés à cette feuille.
-Le nom de l'équipe n'est pas répété dans la feuille `Evenements` ; l'identifiant
-du match et les informations du match permettent de rattacher chaque ligne.
+La feuille `Evenements` reprend tous les attributs métier de `Evenement`.
+Les attributs techniques `createdAt` et `syncedAt` restent exclus. Les
+informations `Date du match` et `Adversaire` sont ajoutées pour faciliter la
+lecture et le rattachement à la rencontre.
 
 ## Format et nom du fichier
 
@@ -277,7 +293,10 @@ exportés ainsi que le nom du fichier.
 - Un export `.xlsx` est possible depuis l'icône d'export de chaque carte de
   match dans `team-detail`.
 - Plusieurs matchs peuvent être sélectionnés et exportés dans un seul fichier.
-- Le fichier contient les feuilles `Matchs`, `Evenements` et `Synthese`.
+- Le fichier contient les feuilles `Matchs` et `Evenements`, sans feuille de
+  synthèse.
+- La feuille `Evenements` contient toutes les colonnes correspondant aux
+  attributs métier de `Evenement`, ainsi que la date du match et l'adversaire.
 - Chaque événement est rattaché au bon match par `matchId`.
 - Un match sans événement est exporté sans erreur.
 - L'export fonctionne hors ligne avec les données locales.

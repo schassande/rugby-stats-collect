@@ -1,9 +1,9 @@
 
 TODO list
-- Export Excel d'un match ou de tous les matches d'une équipe
-- déploiement avec nom de domaine rugbystat.chassande.fr
-- tester sur telephone dont le mode local
 - tester la creation de compte normal (pas google) + authentification
+- Réinitialisation de mot de passe
+- Déploiement avec nom de domaine rugbystat.chassande.fr
+- Tester sur telephone dont le mode local
 
 DONE
 - Mettre la protection sur les tables firestore avec les règles (stocker les règles dans GIT). utiliser les managerId pour controler les acces
@@ -13,3 +13,4 @@ DONE
 - Authentification automatique en local
 - tester la synchro lorsque connecté local
 - Télécharger en local les matches et en options les événements 
+- Export Excel d'un match ou de tous les matches d'une équipe
