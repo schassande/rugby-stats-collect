@@ -14,15 +14,16 @@ données locales disponibles, y compris lorsque l'application est hors ligne.
 
 L'utilisateur peut :
 
-- exporter un match depuis sa page de détail ;
+- exporter un match depuis l'icône d'export de sa carte dans `team-detail` ;
 - sélectionner plusieurs matchs depuis une liste de matchs, puis lancer un
   export groupé ;
 - choisir explicitement les matchs à exporter avant de générer le fichier ;
 - télécharger le fichier généré depuis le navigateur.
 
-Les événements exportés sont ceux rattachés aux matchs sélectionnés via
-`Evenement.matchId`. Tous les événements sont exportés, quelle que soit leur
-nature, leur équipe, leur période ou leur résultat.
+Les matchs exportables sont exclusivement ceux de l'équipe courante et de la
+saison déjà sélectionnée ou affichée dans `team-detail`. Les événements exportés sont ceux rattachés aux matchs
+sélectionnés via `Evenement.matchId`. Toute donnée orpheline est exclue de
+l'export, sans message ni avertissement à l'utilisateur.
 
 ## Disponibilité dans l'application
 
@@ -39,7 +40,7 @@ immédiatement un fichier Excel contenant uniquement le match concerné et ses
 
 L'icône est fa-file-excel-o sans libellé mais avec une infobulle explicite, par exemple
 « Exporter ce match », afin de rester compréhensible et accessible. L'action
-doit être désactivée pendant la génération de l'export et son état de
+doit être désactivée pendant la génération de son export et son état de
 chargement doit être visible.
 
 ### Mode d'export multiple
@@ -54,15 +55,23 @@ Lorsque la checkbox « Export multiple » est cochée, une checkbox de sélectio
 devient visible à gauche de chaque `p-card`. L'utilisateur peut alors
 sélectionner les matchs à inclure dans le fichier.
 
+La liste des matchs n'est pas paginée. Le bouton « Sélectionner tous » agit
+donc sur l'ensemble des matchs correspondant au filtre de saison affiché.
+
 Le bouton « Sélectionner tous » est visible et actif uniquement en mode export
-multiple. Il coche en une seule action les checkboxes de tous les matchs
-affichés dans la liste et met à jour le compteur du bouton d'export. Il s'agit
-d'un raccourci d'interface équivalent au fait de cocher chaque case
-individuellement.
+multiple. Il coche en une seule action les checkboxes de tous les matchs de la
+saison déjà sélectionnée ou affichée dans `team-detail`, correspondant au filtre actif, y compris ceux qui ne seraient
+pas actuellement visibles à l'écran, puis met à jour le compteur du bouton
+d'export. Il s'agit d'un raccourci d'interface équivalent au fait de cocher
+chaque case individuellement.
 
 Les checkboxes individuelles restent indépendantes après cette action :
 l'utilisateur peut décocher certains matchs sans modifier la sélection des
-autres. Le bouton ne doit donc pas rendre la sélection indivisible. Il n'y a pas d'état « tous sélectionnés », seulemenent des états individuels de chaque case à cocher.
+autres. Le bouton ne rend donc pas la sélection indivisible. Lorsque tous les
+matchs de la saison en cours correspondant au filtre sont sélectionnés, son
+libellé devient « Désélectionner tous » ; il permet alors de vider la sélection
+en une seule action. Si au moins un match est désélectionné, le libellé revient
+à « Sélectionner tous ».
 
 Le bouton d'export multiple :
 
@@ -75,6 +84,11 @@ Le bouton d'export multiple :
 Lorsque le mode multiple est désactivé, les checkboxes de sélection des cartes
 ne sont plus visibles et la sélection est réinitialisée. L'export simple de
 chaque carte reste disponible quel que soit l'état du mode multiple.
+
+La sélection est également réinitialisée lorsqu'un filtre de saison est
+modifié, lorsque la liste des matchs est rechargée ou lorsque l'utilisateur
+change d'équipe. Les matchs sélectionnés doivent donc toujours correspondre à
+la liste et au filtre actuellement affichés.
 
 Le compteur affiché dans le bouton est mis à jour immédiatement à chaque
 sélection ou désélection. Son libellé attendu est par exemple
@@ -102,8 +116,10 @@ Avant le téléchargement, l'application :
 3. construit le classeur Excel ;
 4. déclenche le téléchargement du fichier.
 
-Pendant la génération, l'action est désactivée et un indicateur de chargement
-est affiché. Une erreur est présentée sans perdre la sélection des matchs.
+Un seul export peut être généré à la fois. Pendant la génération, toutes les
+actions d'export de `team-detail` sont désactivées et un indicateur de
+chargement est affiché. Une erreur est présentée sans perdre la sélection des
+matchs.
 
 ## Contenu du classeur
 
@@ -123,8 +139,8 @@ Une ligne par match sélectionné, avec les colonnes :
 | Lieu | `Match.lieu` |
 | Terrain | `Match.terrain` |
 | Conditions météo | `Match.conditions` |
-| Début | `Match.debut` |
-| Fin | `Match.fin` |
+| Début | `Match.debut` au format `AAAA/MM/JJ HH:mm:ss` |
+| Fin | `Match.fin` au format `AAAA/MM/JJ HH:mm:ss` |
 | Score nous | `Match.score.nous` |
 | Score adversaire | `Match.score.adversaire` |
 | Statut | `Match.status` |
@@ -133,7 +149,7 @@ Une ligne par match sélectionné, avec les colonnes :
 Les valeurs facultatives absentes restent vides. Les scores et le nombre
 d'événements sont exportés comme des nombres Excel.
 
-### Feuille `Événements`
+### Feuille `Evenements`
 
 Une ligne par événement, avec les colonnes :
 
@@ -158,13 +174,35 @@ Les événements sont triés par identifiant de match, puis par période et par
 instant croissant. Lorsqu'un instant ne peut pas être comparé, l'ordre de
 lecture local est conservé pour les événements concernés.
 
-### Feuille `Synthèse`
+### Formats de dates et champs techniques
+
+Les attributs techniques `createdAt`, `updatedAt` et `syncedAt` ne sont pas
+exportés, aussi bien pour les matchs que pour les événements.
+
+Les autres valeurs temporelles sont exportées avec les formats suivants :
+
+| Entité | Attribut | Format Excel |
+|---|---|---|
+| Match | `date` | `AAAA/MM/JJ` |
+| Match | `debut`, `fin` | `AAAA/MM/JJ HH:mm:ss` |
+| Événement | `instant` | `AAAA/MM/JJ HH:mm:ss` |
+| Événement | `minute`, `seconde` | nombre simple |
+
+Les dates et heures doivent être écrites comme de véritables valeurs date/heure
+Excel, avec un format d'affichage explicite (`yyyy/mm/dd` ou
+`yyyy/mm/dd hh:mm:ss`), et non comme du texte. Cette approche garantit leur
+lecture, leur tri et leur utilisation dans les formules Excel, indépendamment
+des paramètres régionaux de l'ordinateur. Les attributs absents restent vides.
+
+### Feuille `Synthese`
 
 Une feuille de synthèse regroupe par match, équipe et nature/type le nombre
 d'événements exportés. Elle contient notamment : `Match`, `Adversaire`,
 `Équipe`, `Nature`, `Type`, `Nombre`.
 
 Les natures et types sans occurrence ne sont pas ajoutés à cette feuille.
+Le nom de l'équipe n'est pas répété dans la feuille `Evenements` ; l'identifiant
+du match et les informations du match permettent de rattacher chaque ligne.
 
 ## Format et nom du fichier
 
@@ -172,22 +210,26 @@ Le fichier est au format `.xlsx`, avec une première ligne d'en-tête dans chaqu
 feuille, des colonnes dimensionnées et des filtres automatiques. La première
 ligne est figée.
 
-Le nom suit le format :
+Le nom suit le format, avec la date et l'heure locales de génération
+(`YYYY-MM-DD-HH-mm-ss`) :
 
 ```text
-rugby-stats-matchs-YYYY-MM-DD.xlsx
+rugby-stats-{nom-equipe}-{saison}-YYYY-MM-DD-HH-mm-ss.xlsx
 ```
 
-Pour un export d'un seul match, le nom de l'adversaire peut être ajouté après
-le préfixe, après nettoyage des caractères interdits. Pour plusieurs matchs,
-aucun adversaire ne doit être utilisé dans le nom.
+Le nom de l'équipe et la saison sont nettoyés pour supprimer les caractères
+interdits dans un nom de fichier. Si le nom de l'équipe est introuvable ou
+devient vide après nettoyage, la valeur `equipe-inconnue` est utilisée. Le nom
+est identique pour un export simple ou multiple ; les noms des adversaires ne
+sont pas ajoutés.
 
 ## Règles métier
 
 - Les matchs sont triés par date décroissante, puis par identifiant.
 - Un match sans événement reste présent dans `Matchs`.
-- Un événement orphelin ou dont le match est introuvable n'est pas exporté et
-  ne doit pas être signalé.
+- L'export part exclusivement des matchs de l'équipe courante et de la saison
+  en cours ; les données orphelines ne sont pas exportées et sont ignorées
+  silencieusement.
 - Les données locales sont la source de vérité ; aucune synchronisation n'est
   forcée avant l'export.
 - Les valeurs métier sont exportées telles qu'elles sont stockées, sans
@@ -198,22 +240,29 @@ aucun adversaire ne doit être utilisé dans le nom.
 Si la génération échoue, aucun téléchargement partiel ne doit être déclenché.
 L'utilisateur voit un message explicite et peut relancer l'opération.
 
-Si certains événements sont ignorés, le téléchargement reste possible sans message d'information. Les erreurs de lecture locale interrompent l'export.
+Les données orphelines sont ignorées silencieusement, sans information affichée
+à l'utilisateur. Les erreurs de lecture locale interrompent l'export.
 
 Après génération, un message indique le nombre de matchs et d'événements
 exportés ainsi que le nom du fichier.
 
 ## Contraintes d'implémentation
 
-- Utiliser une bibliothèque `.xlsx` compatible avec Angular et le navigateur,
-  à valider avec les dépendances existantes avant ajout.
+- Utiliser la bibliothèque `xlsx` (SheetJS) pour générer les fichiers `.xlsx`
+  dans Angular et le navigateur.
 - Isoler la construction du classeur dans un service dédié:  `ExportExcelService`.
 - Le service ne doit effectuer aucune écriture dans IndexedDB ou Firestore.
 - Mutualiser la préparation des données pour l'export simple et groupé.
+- Aucune limite fonctionnelle de taille n'est définie pour l'export ; il doit
+  être généré quelle que soit sa volumétrie.
 - Utiliser les composants PrimeNG existants pour boutons, sélection, messages
   et indicateurs de chargement.
-- Tester la sélection simple et multiple, l'absence d'événements, le tri, les
-  champs facultatifs et les erreurs de lecture.
+- Couvrir uniquement les cas principaux dans les tests d'interface : export
+  simple depuis une carte, activation du mode multiple, sélection de plusieurs
+  matchs, bouton « Sélectionner tous », désélection individuelle, compteur et
+  activation du bouton d'export.
+- Tester côté service la sélection simple et multiple, l'absence d'événements,
+  le tri, les champs facultatifs et les erreurs de lecture.
 
 ## Hors périmètre
 
@@ -225,9 +274,10 @@ exportés ainsi que le nom du fichier.
 
 ## Critères d'acceptation
 
-- Un export `.xlsx` est possible depuis la page de détail d'un match.
+- Un export `.xlsx` est possible depuis l'icône d'export de chaque carte de
+  match dans `team-detail`.
 - Plusieurs matchs peuvent être sélectionnés et exportés dans un seul fichier.
-- Le fichier contient les feuilles `Matchs`, `Événements` et `Synthèse`.
+- Le fichier contient les feuilles `Matchs`, `Evenements` et `Synthese`.
 - Chaque événement est rattaché au bon match par `matchId`.
 - Un match sans événement est exporté sans erreur.
 - L'export fonctionne hors ligne avec les données locales.
