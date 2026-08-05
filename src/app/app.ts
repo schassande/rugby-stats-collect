@@ -5,6 +5,7 @@ import { TeamService } from '@core/services/team.service';
 import { MatchService } from '@core/services/match.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DatabaseService } from '@core/services/database.service';
+import { PwaUpdateService } from '@core/services/pwa-update.service';
 
 @Component({
   selector: 'app-root',
@@ -157,6 +158,7 @@ export class App {
   private readonly teamService = inject(TeamService);
   private readonly matchService = inject(MatchService);
   private readonly router = inject(Router);
+  private readonly pwaUpdateService = inject(PwaUpdateService);
 
   user = toSignal(this.auth.currentManager$);
   equipeSelectionnee = toSignal(this.teamService.currentTeam$);

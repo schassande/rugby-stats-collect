@@ -6,7 +6,10 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
-    "public": "dist",
+    "public": "dist/GamesStats/browser",
+    "predeploy": [
+      "npm run build"
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",
