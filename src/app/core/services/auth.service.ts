@@ -1,5 +1,15 @@
 import { Injectable } from '@angular/core';
-import { createUserWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut, User, UserCredential } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  User,
+  UserCredential,
+} from 'firebase/auth';
 import { doc, enableNetwork, getDoc, getDocFromServer, setDoc } from 'firebase/firestore';
 import { BehaviorSubject } from 'rxjs';
 import { auth, db as firestoreDatabase } from '../config/firebase.config';
@@ -9,7 +19,7 @@ import { db as localDatabase, LocalUser } from '../db/rugby-stats.database';
 export type AuthMode = 'local' | 'firebase';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
   private static readonly SALT = 'rugby_local_salt_v1';
@@ -23,11 +33,10 @@ export class AuthService {
   private currentManagerSubject = new BehaviorSubject<Manager | null>(null);
   public currentManager$ = this.currentManagerSubject.asObservable();
 
-
   public async checkFirebaseUserConnected(): Promise<void> {
     const firebaseUser = auth?.currentUser;
     if (!firebaseUser) {
-      console.error('Aucun utilisateur Firebase authentifié.')
+      console.error('Aucun utilisateur Firebase authentifié.');
       throw new Error('Aucun utilisateur Firebase authentifié.');
     }
 
@@ -38,20 +47,28 @@ export class AuthService {
       try {
         await auth.currentUser!.reload();
         await firebaseUser.getIdToken(true);
-      } catch(err) {
-        throw new Error('Le token Firebase n est plus valide et il n est pas possible de le rafraichir', { cause: err });
+      } catch (err) {
+        throw new Error(
+          'Le token Firebase n est plus valide et il n est pas possible de le rafraichir',
+          { cause: err },
+        );
       }
     }
   }
   /**
    * Enregistrement de l'utilisateur par son email.
-   * @param email 
-   * @param password 
-   * @param prenom 
-   * @param nom 
-   * @returns 
+   * @param email
+   * @param password
+   * @param prenom
+   * @param nom
+   * @returns
    */
-  public async registerWithEmail(email: string, password: string, prenom: string, nom: string): Promise<void> {
+  public async registerWithEmail(
+    email: string,
+    password: string,
+    prenom: string,
+    nom: string,
+  ): Promise<void> {
     // creation de l'utilisateur dans firebase
     const userCredential = await createUserWithEmailAndPassword(auth!, email, password);
     const user = userCredential.user;
@@ -62,7 +79,7 @@ export class AuthService {
       prenom,
       nom,
       createdAt: d,
-      updatedAt: d
+      updatedAt: d,
     };
     // enregistrement du manager dans firestore
     await setDoc(doc(firestoreDatabase, 'managers', manager.id), manager);
@@ -78,18 +95,22 @@ export class AuthService {
     this.currentManagerSubject.next(localUser);
   }
 
-  public async loginWithEmail(email: string, password: string, ): Promise<void> {
+  public async loginWithEmail(email: string, password: string): Promise<void> {
     if (this.getAuthMode() === 'local') {
       const localUser = await this.verifyLocalUser(email, password);
       if (!localUser) {
         throw new Error('Invalid credentials');
       }
       this.currentManagerSubject.next(localUser);
-      
     } else if (this.getAuthMode() === 'firebase') {
       const fbUser = await signInWithEmailAndPassword(auth!, email, password);
       await this.manageFirebaseAuthResult(fbUser, password);
     }
+  }
+
+  /** Demande à Firebase l'envoi d'un lien de réinitialisation. */
+  public async requestPasswordReset(email: string): Promise<void> {
+    await sendPasswordResetEmail(auth!, email);
   }
 
   /**
@@ -102,25 +123,32 @@ export class AuthService {
       onAuthStateChanged(auth, (fbUser) => {
         // console.log('onAuthStateChanged:', fbUser, fbUser?.metadata.lastSignInTime);
         if (!fbUser) {
-          if (firstEmission) { firstEmission = false; resolve(); }
+          if (firstEmission) {
+            firstEmission = false;
+            resolve();
+          }
           return;
         }
-        fbUser.reload()
-            .then(() => this.manageFirebaseAuthUser(fbUser))
-            .catch(error => {
-              console.warn('Profil Firestore indisponible au démarrage:', error);
-              this.currentUserSubject.next(fbUser);
-            })
-            .finally(() => {
-              if (firstEmission) { firstEmission = false; resolve(); }
-            });
+        fbUser
+          .reload()
+          .then(() => this.manageFirebaseAuthUser(fbUser))
+          .catch((error) => {
+            console.warn('Profil Firestore indisponible au démarrage:', error);
+            this.currentUserSubject.next(fbUser);
+          })
+          .finally(() => {
+            if (firstEmission) {
+              firstEmission = false;
+              resolve();
+            }
+          });
       });
     });
   }
 
   public async loginWithGoogle(): Promise<void> {
-    const fbUser = await signInWithPopup(auth,new GoogleAuthProvider());
-    await this.manageFirebaseAuthResult(fbUser)
+    const fbUser = await signInWithPopup(auth, new GoogleAuthProvider());
+    await this.manageFirebaseAuthResult(fbUser);
   }
 
   public isAutoLoginLocalEnabled(): boolean {
@@ -132,7 +160,8 @@ export class AuthService {
   }
 
   public async initializeAutoLoginLocal(): Promise<void> {
-    if (!this.isAutoLoginLocalEnabled() || auth?.currentUser || this.currentManagerSubject.value) return;
+    if (!this.isAutoLoginLocalEnabled() || auth?.currentUser || this.currentManagerSubject.value)
+      return;
     try {
       const users = await this.getLocalUsers();
       if (users.length === 1 && !auth?.currentUser && !this.currentManagerSubject.value) {
@@ -143,11 +172,13 @@ export class AuthService {
     }
   }
 
-  private async manageFirebaseAuthResult(fbUser: UserCredential|null, password: string = ''): Promise<void> {
-    if (fbUser)
-      await this.manageFirebaseAuthUser(fbUser?.user);
+  private async manageFirebaseAuthResult(
+    fbUser: UserCredential | null,
+    password: string = '',
+  ): Promise<void> {
+    if (fbUser) await this.manageFirebaseAuthUser(fbUser?.user);
   }
-  private async manageFirebaseAuthUser(user: User|null, password: string = ''): Promise<void> {
+  private async manageFirebaseAuthUser(user: User | null, password: string = ''): Promise<void> {
     const email = user?.email;
     if (!email) {
       throw new Error('Invalid credentials');
@@ -169,13 +200,13 @@ export class AuthService {
           prenom: user.displayName || '',
           nom: user.displayName || '',
           createdAt: user.metadata.creationTime || '',
-          updatedAt: user.metadata.creationTime || ''
+          updatedAt: user.metadata.creationTime || '',
         };
 
         // enregistrement du manager dans firestore
         await setDoc(doc(firestoreDatabase!, 'managers', manager.id), manager);
       }
-    } catch(error) {
+    } catch (error) {
       console.error('Erreur pendant le traitement de la réponse Firebase', error);
       throw error;
     }
@@ -215,11 +246,18 @@ export class AuthService {
     localStorage.setItem(AuthService.LOCAL_STORAGE_AUTH_MODE, authMode);
   }
 
-  private async saveLocalUser(manager: Manager, password: string|undefined = undefined): Promise<LocalUser> {
+  private async saveLocalUser(
+    manager: Manager,
+    password: string | undefined = undefined,
+  ): Promise<LocalUser> {
     const existing = await localDatabase.local_users.get(manager.id);
-    const passwordHash = password ? await this.hash(password) : (existing ? existing.passwordHash : '');
+    const passwordHash = password
+      ? await this.hash(password)
+      : existing
+        ? existing.passwordHash
+        : '';
     const user: LocalUser = { ...manager, passwordHash };
-    await  localDatabase.local_users.put(user, user.id);
+    await localDatabase.local_users.put(user, user.id);
     return user;
   }
 

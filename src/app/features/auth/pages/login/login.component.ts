@@ -14,7 +14,18 @@ import { PanelModule } from 'primeng/panel';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, AuthModeToggle, CheckboxModule, ButtonModule, InputTextModule, PasswordModule, PanelModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    RouterModule,
+    AuthModeToggle,
+    CheckboxModule,
+    ButtonModule,
+    InputTextModule,
+    PasswordModule,
+    PanelModule,
+  ],
   template: `
     <div class="login-container">
       <h1>Connexion à l'application</h1>
@@ -22,43 +33,79 @@ import { PanelModule } from 'primeng/panel';
       <div style="height: 20px;"></div>
       @if (localAuth() == 'local') {
         <p class="local-users">Liste des utilisateurs locaux :</p>
-        @for(localUser of localUsers() | async; track localUser.id) {
-          <div  class="local-user">
-            <div class="local-user-name" (click)="localSignIn(localUser)">{{localUser.prenom}} {{localUser.nom}}</div>
-            <div class="local-user-delete" (click)="deleteLocalUser(localUser)"><i class="fa fa-trash" aria-hidden="true"></i></div>
+        @for (localUser of localUsers() | async; track localUser.id) {
+          <div class="local-user">
+            <div class="local-user-name" (click)="localSignIn(localUser)">
+              {{ localUser.prenom }} {{ localUser.nom }}
+            </div>
+            <div class="local-user-delete" (click)="deleteLocalUser(localUser)">
+              <i class="fa fa-trash" aria-hidden="true"></i>
+            </div>
           </div>
         } @empty {
-          <p>Aucun utilisateur local. Connectez vous une première fois en ligne pour que votre compte soit disponible hors ligne.</p>
+          <p>
+            Aucun utilisateur local. Connectez vous une première fois en ligne pour que votre compte
+            soit disponible hors ligne.
+          </p>
         }
         <div class="auto-login">
           <label>
-            <p-checkbox inputId="auto-login-local" [binary]="true" [(ngModel)]="autoLoginLocal" (ngModelChange)="setAutoLoginLocal($event)" />
+            <p-checkbox
+              inputId="auto-login-local"
+              [binary]="true"
+              [(ngModel)]="autoLoginLocal"
+              (ngModelChange)="setAutoLoginLocal($event)"
+            />
             Se connecter automatiquement
           </label>
         </div>
       } @else {
-        <p-button class="google-login" type="button" label="Google" icon="pi pi-google" (onClick)="loginWithGoogle()" severity="secondary" />
+        <p-button
+          class="google-login"
+          type="button"
+          label="Google"
+          icon="pi pi-google"
+          (onClick)="loginWithGoogle()"
+          severity="secondary"
+        />
         <div class="login-separator" aria-hidden="true"><span>OU</span></div>
         <p-panel class="login-panel">
-        <form [formGroup]="form" (ngSubmit)="login()">
-          <div class="form-field">
-            <label for="email">Email</label>
-            <input pInputText id="email" formControlName="email" type="email" placeholder="Email" autocomplete="username"/>
-          </div>
+          <form [formGroup]="form" (ngSubmit)="login()">
+            <div class="form-field">
+              <label for="email">Email</label>
+              <input
+                pInputText
+                id="email"
+                formControlName="email"
+                type="email"
+                placeholder="Email"
+                autocomplete="username"
+              />
+            </div>
 
-          <div class="form-field">
-            <label for="password">Mot de passe</label>
-            <p-password formControlName="password" placeholder="Mot de passe" autocomplete="current-password" [feedback]="false" />
-          </div>
+            <div class="form-field">
+              <label for="password">Mot de passe</label>
+              <p-password
+                formControlName="password"
+                placeholder="Mot de passe"
+                autocomplete="current-password"
+                [feedback]="false"
+              />
+            </div>
 
-          <div class="actions">
-            <p-button type="submit" label="Connexion" />
-          </div>
-        </form>
+            <div class="actions">
+              <p-button type="submit" label="Connexion" />
+            </div>
+          </form>
 
-        <div class="auth-footer">
-          <p>Pas encore de compte ? <a routerLink="/auth/signup">Créer un compte</a></p>
-        </div>
+          <div class="auth-footer">
+            <p>
+              <a href="/auth/reset-password" (click)="openPasswordReset($event)"
+                >Réinitialiser son mot de passe</a
+              >
+            </p>
+            <p>Pas encore de compte ? <a routerLink="/auth/signup">Créer un compte</a></p>
+          </div>
         </p-panel>
       }
 
@@ -168,8 +215,8 @@ import { PanelModule } from 'primeng/panel';
         margin: 30px auto 0 auto;
         text-align: right;
       }
-    `
-  ]
+    `,
+  ],
 })
 export class LoginComponent {
   form: ReturnType<FormBuilder['group']>;
@@ -189,13 +236,13 @@ export class LoginComponent {
     private readonly formBuilder: FormBuilder,
     protected readonly auth: AuthService,
     private readonly router: Router,
-    private readonly route: ActivatedRoute
+    private readonly route: ActivatedRoute,
   ) {
     this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/app';
     this.autoLoginLocal.set(this.auth.isAutoLoginLocalEnabled());
     this.form = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(6)]],
     });
   }
 
@@ -237,5 +284,13 @@ export class LoginComponent {
   deleteLocalUser(localUser: LocalUser) {
     this.auth.deleteLocalUser(localUser.id);
     this.localAuth.set(this.localAuth());
+  }
+
+  /** Ouvre la page de réinitialisation avec l'adresse éventuellement saisie. */
+  async openPasswordReset(event: Event): Promise<void> {
+    event.preventDefault();
+    await this.router.navigate(['/auth/reset-password'], {
+      queryParams: { email: this.form.controls['email'].value ?? undefined },
+    });
   }
 }

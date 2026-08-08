@@ -1,13 +1,11 @@
 
-WIP
+# WIP
 
-TODO list
-- déploiement auto Github : bug avec ng pas installé.
+## TODO list
 - tester la creation de compte normal (pas google) + authentification
-- Réinitialisation de mot de passe
 - Tester sur telephone dont le mode local
 
-DONE
+## DONE
 - Mettre la protection sur les tables firestore avec les règles (stocker les règles dans GIT). utiliser les managerId pour controler les acces
 - Enlever le score Transformation et ajouter un résultat essai car c'est forcément à la suite
 - Calculer les temps des evenements par rapport au début du match/debut 2ieme mi-temps
@@ -18,3 +16,5 @@ DONE
 - Export Excel d'un match ou de tous les matches d'une équipe
 - Déploiement avec nom de domaine rugbystat.chassande.fr: 
 - PWA : installer l'application
+- déploiement auto Github : bug avec ng pas installé.
+- Réinitialisation de mot de passe
